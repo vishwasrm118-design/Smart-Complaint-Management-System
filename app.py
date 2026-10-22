@@ -43,12 +43,24 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             title TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'Other',
             description TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'Submitted',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
     """)
+
+    columns = {
+        row["name"]
+        for row in db.execute("PRAGMA table_info(complaints)").fetchall()
+    }
+    if "category" not in columns:
+        db.execute(
+            "ALTER TABLE complaints "
+            "ADD COLUMN category TEXT NOT NULL DEFAULT 'Other'"
+        )
+
     db.commit()
 
 
@@ -149,17 +161,31 @@ def logout():
 def lodge_complaint():
     if request.method == "POST":
         title = request.form.get("title", "").strip()
+        category = request.form.get("category", "").strip()
         description = request.form.get("description", "").strip()
 
-        if not title or not description:
-            flash("Title and description are required.")
+        allowed_categories = {
+            "Infrastructure",
+            "Electrical",
+            "Water Supply",
+            "Cleanliness",
+            "Other",
+        }
+
+        if not title or not category or not description:
+            flash("Title, category, and description are required.")
+            return render_template("lodge_complaint.html")
+
+        if category not in allowed_categories:
+            flash("Please select a valid complaint category.")
             return render_template("lodge_complaint.html")
 
         db = get_db()
         cursor = db.execute(
-            """INSERT INTO complaints (user_id, title, description)
-               VALUES (?, ?, ?)""",
-            (session["user_id"], title, description)
+            """INSERT INTO complaints
+               (user_id, title, category, description)
+               VALUES (?, ?, ?, ?)""",
+            (session["user_id"], title, category, description)
         )
         db.commit()
 

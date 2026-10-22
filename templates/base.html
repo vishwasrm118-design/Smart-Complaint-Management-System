@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Complaint Management System</title>
+</head>
+<body>
+    <header>
+        <h1>Smart Complaint Management System</h1>
+        {% if session.get('user_id') %}
+        <p>Welcome, {{ session.get('user_name', 'User') }}</p>
+        {% endif %}
+        <hr>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                    <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <hr>
+        <p>Smart Complaint Management System</p>
+    </footer>
+</body>
+</html>

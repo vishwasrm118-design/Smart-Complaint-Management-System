@@ -1,0 +1,47 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<h2>Lodge a Complaint</h2>
+
+<form method="POST" action="{{ url_for('lodge_complaint') }}">
+    <div>
+        <label for="title">Complaint Title</label>
+        <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            maxlength="150"
+            placeholder="Enter a short complaint title"
+        >
+    </div>
+
+    <div>
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+            <option value="">Select a category</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Water Supply">Water Supply</option>
+            <option value="Cleanliness">Cleanliness</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="description">Description</label>
+        <textarea
+            id="description"
+            name="description"
+            rows="5"
+            required
+            maxlength="2000"
+            placeholder="Describe your complaint"
+        ></textarea>
+    </div>
+
+    <button type="submit">Submit Complaint</button>
+</form>
+
+<p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+{% endblock %}
