@@ -1,47 +1,83 @@
-﻿{% extends "base.html" %}
+﻿```html
+{% extends "base.html" %}
 
 {% block content %}
-<h2>Lodge a Complaint</h2>
+<section class="complaint-page">
+    <div class="complaint-card">
 
-<form method="POST" action="{{ url_for('lodge_complaint') }}">
-    <div>
-        <label for="title">Complaint Title</label>
-        <input
-            type="text"
-            id="title"
-            name="title"
-            required
-            maxlength="150"
-            placeholder="Enter a short complaint title"
-        >
+        <div class="complaint-heading">
+            <div class="complaint-icon" aria-hidden="true">📝</div>
+            <p class="complaint-eyebrow">COMPLAINT CENTER</p>
+            <h2>Lodge a Complaint</h2>
+            <p class="complaint-description">
+                Tell us about the issue you are facing. Our team will review
+                your complaint and work towards resolving it.
+            </p>
+        </div>
+
+        <div class="complaint-info">
+            <span aria-hidden="true">ℹ️</span>
+            Please provide accurate details so we can assist you efficiently.
+        </div>
+
+        <form method="POST"
+              action="{{ url_for('lodge_complaint') }}"
+              class="complaint-form">
+
+            <div class="complaint-field">
+                <label for="title">Complaint Title <span>*</span></label>
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    required
+                    maxlength="150"
+                    placeholder="e.g. Classroom fan is not working"
+                >
+                <small>Write a short title describing the issue.</small>
+            </div>
+
+            <div class="complaint-field">
+                <label for="category">Category <span>*</span></label>
+                <select id="category" name="category" required>
+                    <option value="" disabled selected>Select a category</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Water Supply">Water Supply</option>
+                    <option value="Cleanliness">Cleanliness</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="complaint-field">
+                <label for="description">Complaint Description <span>*</span></label>
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="6"
+                    required
+                    placeholder="Describe the issue, where it occurred, and any other useful details..."
+                ></textarea>
+                <small>Please include enough details to help us understand the problem.</small>
+            </div>
+
+            <div class="complaint-actions">
+                <a href="{{ url_for('dashboard') }}" class="complaint-btn complaint-btn-secondary">
+                    ← Back to Dashboard
+                </a>
+
+                <button type="submit" class="complaint-btn complaint-btn-primary">
+                    Submit Complaint <span aria-hidden="true">→</span>
+                </button>
+            </div>
+        </form>
+
+        <div class="complaint-security">
+            <span aria-hidden="true">🔒</span>
+            Your complaint details are handled through your account.
+        </div>
+
     </div>
-
-    <div>
-        <label for="category">Category</label>
-        <select id="category" name="category" required>
-            <option value="">Select a category</option>
-            <option value="Infrastructure">Infrastructure</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Water Supply">Water Supply</option>
-            <option value="Cleanliness">Cleanliness</option>
-            <option value="Other">Other</option>
-        </select>
-    </div>
-
-    <div>
-        <label for="description">Description</label>
-        <textarea
-            id="description"
-            name="description"
-            rows="5"
-            required
-            maxlength="2000"
-            placeholder="Describe your complaint"
-        ></textarea>
-    </div>
-
-    <button type="submit">Submit Complaint</button>
-</form>
-
-<p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+</section>
 {% endblock %}
+```

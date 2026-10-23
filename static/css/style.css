@@ -1,0 +1,795 @@
+﻿```css
+/* ==================================================
+   SMART COMPLAINT MANAGEMENT SYSTEM
+   Complete Professional Stylesheet
+   Login, Dashboard and Lodge Complaint
+   ================================================== */
+
+/* ---------- Global Styles ---------- */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f3f6fc;
+    color: #172033;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+header {
+    width: 100%;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px 5%;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 3px 15px rgba(15, 23, 42, 0.04);
+}
+
+header h1 {
+    margin: 0;
+    color: #173b72;
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+header p {
+    margin: 0;
+    padding: 9px 16px;
+    border-radius: 30px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+main {
+    width: 100%;
+    max-width: 1200px;
+    flex: 1;
+    margin: 0 auto;
+    padding: 42px 28px;
+}
+
+footer {
+    width: 100%;
+    margin-top: auto;
+    padding: 24px 20px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+    text-align: center;
+}
+
+footer p {
+    margin: 3px 0;
+}
+
+a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+h2,
+h3 {
+    color: #172033;
+    line-height: 1.3;
+}
+
+/* ---------- Flash Messages ---------- */
+
+main > ul {
+    margin: 0 0 22px;
+    padding: 14px 20px 14px 38px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+/* ---------- Shared Buttons ---------- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border: 1px solid #dbe3ef;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 700;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.btn:hover {
+    border-color: #2563eb;
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.btn-primary {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.btn-small {
+    padding: 7px 12px;
+    font-size: 0.85rem;
+}
+
+/* ==================================================
+   LOGIN PAGE
+   ================================================== */
+
+.login-page {
+    width: 100%;
+    min-height: 540px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 35px 16px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 470px;
+    padding: 38px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.09);
+}
+
+.login-brand-icon {
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    border-radius: 15px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);
+}
+
+.login-eyebrow {
+    margin: 0 0 8px;
+    color: #2563eb;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.login-card h2 {
+    margin: 0 0 10px;
+    color: #172033;
+    font-size: 1.8rem;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+}
+
+.login-description {
+    margin: 0 0 26px;
+    color: #64748b;
+    font-size: 0.94rem;
+    line-height: 1.7;
+}
+
+.login-card .login-form {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.login-field {
+    margin-bottom: 19px;
+}
+
+.login-card .login-field label {
+    display: block;
+    margin: 0 0 8px;
+    color: #334155;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.login-card .login-field input {
+    width: 100%;
+    min-height: 49px;
+    padding: 13px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #172033;
+    font: inherit;
+    font-size: 0.92rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-card .login-field input::placeholder {
+    color: #94a3b8;
+}
+
+.login-card .login-field input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.login-card .login-submit {
+    width: 100%;
+    min-height: 49px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 25px;
+    padding: 13px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.98rem;
+    font-weight: 750;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.login-card .login-submit:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.login-register {
+    margin-top: 25px;
+    padding-top: 21px;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.login-register a {
+    color: #2563eb;
+    font-weight: 750;
+}
+
+.login-security {
+    margin-top: 23px;
+    color: #64748b;
+    font-size: 0.78rem;
+    text-align: center;
+    line-height: 1.7;
+}
+
+/* ==================================================
+   DASHBOARD PAGE
+   ================================================== */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.dashboard-eyebrow {
+    margin-bottom: 8px;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+}
+
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.dashboard-subtitle {
+    margin: 8px 0 0;
+    color: #64748b;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.stat-card {
+    min-width: 0;
+    padding: 23px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.stat-icon {
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+}
+
+.stat-card p {
+    margin: 0;
+    color: #64748b;
+}
+
+.stat-card h3 {
+    margin: 7px 0 0;
+    color: #0f172a;
+    font-size: 2rem;
+}
+
+.complaints-panel {
+    margin-bottom: 24px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+}
+
+.panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 23px 25px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.panel-heading h3 {
+    margin: 0;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+}
+
+.complaint-count {
+    padding: 6px 11px;
+    border-radius: 20px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.complaints-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.complaints-table th {
+    padding: 15px 20px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.complaints-table td {
+    padding: 17px 20px;
+    border-bottom: 1px solid #eef2f7;
+    color: #475569;
+}
+
+.complaints-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.complaint-id {
+    color: #2563eb;
+    font-weight: 800;
+}
+
+.complaint-title {
+    color: #1e293b;
+    font-weight: 650;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-resolved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.empty-state {
+    padding: 45px 25px;
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 2.5rem;
+}
+
+.empty-state p {
+    color: #64748b;
+}
+
+.dashboard-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 8px 0;
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+.dashboard-footer a {
+    color: #dc2626;
+}
+
+/* ==================================================
+   LODGE A COMPLAINT PAGE
+   ================================================== */
+
+.complaint-page {
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.complaint-page-header {
+    margin-bottom: 25px;
+}
+
+.complaint-page-eyebrow {
+    margin: 0 0 8px;
+    color: #2563eb;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 1.7px;
+    text-transform: uppercase;
+}
+
+.complaint-page-header h2 {
+    margin: 0 0 10px;
+    color: #172033;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.complaint-page-description {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.98rem;
+    line-height: 1.7;
+}
+
+.complaint-form-card {
+    padding: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
+}
+
+.complaint-form-heading {
+    margin: 0 0 7px;
+    color: #172033;
+    font-size: 1.2rem;
+    font-weight: 750;
+}
+
+.complaint-form-note {
+    margin: 0 0 25px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.complaint-form {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.complaint-field {
+    margin-bottom: 22px;
+}
+
+.complaint-form .complaint-field label {
+    display: block;
+    margin: 0 0 8px;
+    color: #334155;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.complaint-field input,
+.complaint-field select,
+.complaint-field textarea {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    background: #ffffff;
+    color: #172033;
+    font-family: inherit;
+    font-size: 0.94rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.complaint-field input::placeholder,
+.complaint-field textarea::placeholder {
+    color: #94a3b8;
+}
+
+.complaint-field select {
+    cursor: pointer;
+}
+
+.complaint-field textarea {
+    min-height: 160px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.complaint-field input:focus,
+.complaint-field select:focus,
+.complaint-field textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11);
+}
+
+.complaint-field small {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.complaint-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.complaint-submit {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 12px 22px;
+    border: 1px solid #2563eb;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 750;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.complaint-submit:hover {
+    transform: translateY(-1px);
+    background: #1d4ed8;
+}
+
+.complaint-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 22px;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.complaint-back-link:hover {
+    color: #2563eb;
+}
+
+/* ==================================================
+   REGISTER AND TRACK COMPLAINT PAGES
+   ================================================== */
+
+.register-card,
+.track-card {
+    width: 100%;
+    max-width: 650px;
+    margin: 0 auto;
+    padding: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.register-card h2,
+.track-card h2 {
+    margin-top: 0;
+}
+
+.register-card label,
+.track-card label {
+    color: #334155;
+    font-weight: 700;
+}
+
+.register-card input {
+    width: 100%;
+    min-height: 46px;
+    margin: 7px 0 18px;
+    padding: 11px 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font: inherit;
+}
+
+.register-card input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ==================================================
+   RESPONSIVE DESIGN
+   ================================================== */
+
+@media (max-width: 700px) {
+    header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 18px 22px;
+    }
+
+    header h1 {
+        font-size: 1.2rem;
+    }
+
+    main {
+        padding: 28px 18px;
+    }
+
+    .dashboard-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-heading {
+        padding: 18px;
+    }
+
+    .complaints-table th,
+    .complaints-table td {
+        padding: 12px;
+    }
+
+    .dashboard-footer {
+        flex-direction: column;
+    }
+
+    .complaint-form-card {
+        padding: 23px 19px;
+    }
+
+    .complaint-page-header h2 {
+        font-size: 1.65rem;
+    }
+
+    .complaint-form-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .complaint-submit {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .login-page {
+        min-height: auto;
+        padding: 20px 8px;
+    }
+
+    .login-card {
+        padding: 28px 22px;
+        border-radius: 16px;
+    }
+
+    .login-card h2 {
+        font-size: 1.55rem;
+    }
+
+    .register-card,
+    .track-card {
+        padding: 23px 18px;
+    }
+}
+```

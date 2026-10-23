@@ -2,42 +2,117 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>My Complaints</h2>
+<div class="dashboard-header">
+    <div>
+        <p class="dashboard-eyebrow">USER DASHBOARD</p>
+        <h2>My Complaints</h2>
+        <p class="dashboard-subtitle">
+            Submit, manage, and track your complaints in one place.
+        </p>
+    </div>
 
-<p>
-  <a href="{{ url_for('lodge_complaint') }}">Lodge a Complaint</a>
-</p>
+    <a class="btn btn-primary"
+       href="{{ url_for('lodge_complaint') }}">
+        + Lodge a Complaint
+    </a>
+</div>
 
-{% if complaints %}
-<table>
-  <thead>
-    <tr>
-      <th>Complaint ID</th>
-      <th>Title</th>
-      <th>Status</th>
-      <th>Submitted</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for complaint in complaints %}
-    <tr>
-      <td>{{ complaint.id }}</td>
-      <td>{{ complaint.title }}</td>
-      <td>{{ complaint.status }}</td>
-      <td>{{ complaint.created_at }}</td>
-      <td>
-        <a href="{{ url_for('track_complaint', complaint_id=complaint.id) }}">
-          Track
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <p>Total Complaints</p>
+        <h3>{{ complaints|length }}</h3>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🔄</div>
+        <p>Pending / In Progress</p>
+        <h3>{{ complaints|selectattr('status', 'in', ['Pending', 'In Progress'])|list|length }}</h3>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <p>Resolved</p>
+        <h3>{{ complaints|selectattr('status', 'equalto', 'Resolved')|list|length }}</h3>
+    </div>
+</div>
+
+<div class="complaints-panel">
+    <div class="panel-heading">
+        <div>
+            <h3>Complaint History</h3>
+            <p>View the status and details of your submissions.</p>
+        </div>
+        <span class="complaint-count">
+            {{ complaints|length }} total
+        </span>
+    </div>
+
+    {% if complaints %}
+    <div class="table-wrapper">
+        <table class="complaints-table">
+            <thead>
+                <tr>
+                    <th>Complaint ID</th>
+                    <th>Complaint Details</th>
+                    <th>Status</th>
+                    <th>Date Submitted</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for complaint in complaints %}
+                <tr>
+                    <td>
+                        <span class="complaint-id">#{{ complaint.id }}</span>
+                    </td>
+
+                    <td>
+                        <span class="complaint-title">
+                            {{ complaint.title }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% set status = complaint.status|lower %}
+                        <span class="status-badge
+                            {% if status == 'resolved' %}status-resolved
+                            {% elif status == 'in progress' %}status-progress
+                            {% elif status == 'rejected' %}status-rejected
+                            {% else %}status-pending{% endif %}">
+                            {{ complaint.status }}
+                        </span>
+                    </td>
+
+                    <td>{{ complaint.created_at }}</td>
+
+                    <td>
+                        <a class="btn btn-small"
+                           href="{{ url_for('track_complaint', complaint_id=complaint.id) }}">
+                            Track →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No complaints yet</h3>
+        <p>You haven't submitted any complaints. Start by lodging your first complaint.</p>
+        <a class="btn btn-primary"
+           href="{{ url_for('lodge_complaint') }}">
+            Lodge Your First Complaint
         </a>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>You haven't submitted any complaints yet.</p>
-{% endif %}
+    </div>
+    {% endif %}
+</div>
 
-<p><a href="{{ url_for('logout') }}">Logout</a></p>
+<div class="dashboard-footer">
+    <span>Your complaints are available here whenever you need them.</span>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</div>
 {% endblock %}

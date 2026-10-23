@@ -1,36 +1,44 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Smart Complaint Management System</title>
+
+    <!-- Connect the CSS stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
     <header>
         <h1>Smart Complaint Management System</h1>
+
         {% if session.get('user_id') %}
-        <p>Welcome, {{ session.get('user_name', 'User') }}</p>
+            <p>Welcome, {{ session.get('user_name', 'User') }}</p>
         {% endif %}
-        <hr>
     </header>
 
     <main>
+        <!-- Display success and error messages -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <ul>
                     {% for message in messages %}
-                    <li>{{ message }}</li>
+                        <li>{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}
         {% endwith %}
 
+        <!-- Page-specific content appears here -->
         {% block content %}{% endblock %}
     </main>
 
     <footer>
-        <hr>
-        <p>Smart Complaint Management System</p>
+        <p>&copy; 2026 Smart Complaint Management System</p>
+        <p>Making complaint management simpler and smarter.</p>
     </footer>
 </body>
 </html>
