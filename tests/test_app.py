@@ -1,17 +1,16 @@
-﻿import pytest
-from app import app as flask_app
+import pytest
+import app as complaint_app
 
 
 @pytest.fixture
 def client(tmp_path):
-    database_path = tmp_path / "test_complaints.db"
-    flask_app.config.update(
+    complaint_app.app.config.update(
         TESTING=True,
         SECRET_KEY="test-secret-key",
-        DATABASE=str(database_path),
+        DATABASE=str(tmp_path / "test_complaints.db"),
     )
 
-    with flask_app.test_client() as test_client:
+    with complaint_app.app.test_client() as test_client:
         yield test_client
 
 
@@ -25,6 +24,7 @@ def register_and_login(client, email="test@example.com"):
         },
         follow_redirects=True,
     )
+
     return client.post(
         "/login",
         data={
@@ -34,6 +34,163 @@ def register_and_login(client, email="test@example.com"):
         follow_redirects=True,
     )
 
+
+# Registration tests
+
+def test_registration_success(client):
+    response = client.post(
+        "/register",
+        data={
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "password123",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Registration successful" in response.data
+
+    with complaint_app.app.app_context():
+        db = complaint_app.get_db()
+        user = db.execute(
+            "SELECT * FROM users WHERE email = ?",
+            ("test@example.com",),
+        ).fetchone()
+
+    assert user is not None
+    assert user["password_hash"] != "password123"
+
+
+def test_registration_rejects_missing_fields(client):
+    response = client.post(
+        "/register",
+        data={"name": "", "email": "", "password": ""},
+    )
+
+    assert response.status_code == 200
+    assert b"All fields are required" in response.data
+
+
+def test_registration_rejects_short_password(client):
+    response = client.post(
+        "/register",
+        data={
+            "name": "Test User",
+            "email": "short@example.com",
+            "password": "123",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"at least 8 characters" in response.data
+
+
+def test_registration_rejects_duplicate_email(client):
+    client.post(
+        "/register",
+        data={
+            "name": "First User",
+            "email": "same@example.com",
+            "password": "password123",
+        },
+    )
+
+    response = client.post(
+        "/register",
+        data={
+            "name": "Second User",
+            "email": "same@example.com",
+            "password": "password456",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"already exists" in response.data
+
+
+# Login and logout tests
+
+def test_login_success(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Test User",
+            "email": "login@example.com",
+            "password": "password123",
+        },
+    )
+
+    response = client.post(
+        "/login",
+        data={
+            "email": "login@example.com",
+            "password": "password123",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"My Complaints" in response.data
+
+
+def test_login_rejects_invalid_password(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Test User",
+            "email": "login@example.com",
+            "password": "password123",
+        },
+    )
+
+    response = client.post(
+        "/login",
+        data={
+            "email": "login@example.com",
+            "password": "wrongpassword",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"Invalid email or password" in response.data
+
+
+def test_dashboard_requires_login(client):
+    response = client.get("/")
+
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_logout_clears_session(client):
+    client.post(
+        "/register",
+        data={
+            "name": "Test User",
+            "email": "logout@example.com",
+            "password": "password123",
+        },
+    )
+    client.post(
+        "/login",
+        data={
+            "email": "logout@example.com",
+            "password": "password123",
+        },
+    )
+
+    response = client.get("/logout", follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Log In" in response.data
+
+    response = client.get("/")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+# Complaint-management tests
 
 def test_lodge_complaint_successfully(client):
     register_and_login(client)
@@ -114,4 +271,3 @@ def test_user_cannot_track_another_users_complaint(client):
     assert response.status_code == 200
     assert b"Complaint not found." in response.data
     assert b"Private details." not in response.data
-
