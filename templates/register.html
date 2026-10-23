@@ -1,23 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Create an Account</h2>
+<section class="register-page">
+    <div class="register-card">
+        <h2>Create an Account</h2>
+        <p>Register to lodge and track your complaints.</p>
 
-<form method="POST" action="{{ url_for('register') }}">
-    <label for="name">Full Name</label><br>
-    <input type="text" id="name" name="name" required><br>
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="register-field">
+                <label for="name">Full Name</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    maxlength="100"
+                    autocomplete="name"
+                    placeholder="Enter your full name"
+                >
+            </div>
 
-    <label for="email">Email Address</label><br>
-    <input type="email" id="email" name="email" required><br>
+            <div class="register-field">
+                <label for="email">Email Address</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                    placeholder="Enter your email address"
+                >
+            </div>
 
-    <label for="password">Password (minimum 8 characters)</label><br>
-    <input type="password" id="password" name="password"
-           minlength="8" required><br>
+            <div class="register-field">
+                <label for="password">Password (minimum 8 characters)</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    minlength="8"
+                    autocomplete="new-password"
+                    placeholder="At least 8 characters"
+                >
+            </div>
 
-    <button type="submit">Register</button>
-</form>
+            <button type="submit">Register</button>
+        </form>
 
-<p>Already have an account?
-    <a href="{{ url_for('login') }}">Log in here</a>.
-</p>
+        <p>
+            Already have an account?
+            <a href="{{ url_for('login') }}">Log in</a>
+        </p>
+    </div>
+</section>
 {% endblock %}

@@ -1,5 +1,4 @@
-
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block content %}
 <h2>Complaint Tracking</h2>
@@ -7,6 +6,7 @@
 <section>
   <p><strong>Complaint ID:</strong> {{ complaint.id }}</p>
   <p><strong>Title:</strong> {{ complaint.title }}</p>
+  <p><strong>Category:</strong> {{ complaint.category }}</p>
   <p><strong>Description:</strong> {{ complaint.description }}</p>
   <p><strong>Status:</strong> {{ complaint.status }}</p>
   <p><strong>Submitted on:</strong> {{ complaint.created_at }}</p>
