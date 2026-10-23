@@ -1,0 +1,12 @@
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Temporary Microsoft Word files
+~$*.docx
+~$*.xlsx
