@@ -3,7 +3,7 @@ import os
 import sqlite3
 from functools import wraps
 from flask import (
-    Flask, render_template, request, redirect,
+    Flask, abort, render_template, request, redirect,
     url_for, session, flash, g
 )
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,6 +13,10 @@ app.config["SECRET_KEY"] = os.environ.get(
     "SECRET_KEY", "dev-key-change-before-deployment"
 )
 app.config["DATABASE"] = os.path.join(app.root_path, "complaints.db")
+
+# Configure administrator access with a comma-separated ADMIN_EMAILS environment variable.
+app.config["ADMIN_EMAILS"] = os.environ.get("ADMIN_EMAILS", "")
+COMPLAINT_STATUSES = ("Submitted", "In Progress", "Resolved", "Rejected")
 
 
 def get_db():
@@ -78,6 +82,46 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped_view
 
+
+def configured_admin_emails():
+    configured = app.config.get("ADMIN_EMAILS", "")
+    if isinstance(configured, str):
+        values = configured.split(",")
+    else:
+        values = configured
+    return {
+        str(email).strip().lower()
+        for email in values
+        if str(email).strip()
+    }
+
+
+def current_user_is_admin():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return False
+    user = get_db().execute(
+        "SELECT email FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    return user is not None and user["email"].strip().lower() in configured_admin_emails()
+
+
+@app.context_processor
+def inject_admin_access():
+    return {"current_user_is_admin": current_user_is_admin}
+
+
+def admin_required(view):
+    """Allow only logged-in users whose database email is explicitly configured as admin."""
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in first.")
+            return redirect(url_for("login"))
+        if not current_user_is_admin():
+            abort(403)
+        return view(*args, **kwargs)
+    return wrapped_view
 
 @app.route("/")
 def dashboard():
@@ -213,6 +257,55 @@ def track_complaint(complaint_id):
     return render_template(
         "track_complaint.html", complaint=complaint
     )
+
+
+@app.route("/admin/complaints")
+@admin_required
+def admin_complaints():
+    try:
+        complaints = get_db().execute(
+            """SELECT complaints.*, users.name AS user_name, users.email AS user_email
+               FROM complaints
+               JOIN users ON users.id = complaints.user_id
+               ORDER BY complaints.id DESC"""
+        ).fetchall()
+    except sqlite3.DatabaseError:
+        app.logger.exception("Could not load complaints for status management")
+        flash("Unable to load complaints right now.")
+        complaints = []
+    return render_template(
+        "admin_complaints.html",
+        complaints=complaints,
+        complaint_statuses=COMPLAINT_STATUSES,
+    )
+
+
+@app.route("/admin/complaints/<int:complaint_id>/status", methods=["POST"])
+@admin_required
+def update_complaint_status(complaint_id):
+    new_status = request.form.get("status", "").strip()
+    if new_status not in COMPLAINT_STATUSES:
+        flash("Invalid complaint status.")
+        return redirect(url_for("admin_complaints"))
+
+    db = get_db()
+    try:
+        cursor = db.execute(
+            "UPDATE complaints SET status = ? WHERE id = ?",
+            (new_status, complaint_id),
+        )
+        if cursor.rowcount == 0:
+            db.rollback()
+            abort(404)
+        db.commit()
+    except sqlite3.DatabaseError:
+        db.rollback()
+        app.logger.exception("Could not update complaint status")
+        flash("Unable to update the complaint status. Please try again.")
+        return redirect(url_for("admin_complaints"))
+
+    flash(f"Complaint #{complaint_id} status updated to {new_status}.")
+    return redirect(url_for("admin_complaints"))
 
 
 if __name__ == "__main__":
