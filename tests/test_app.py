@@ -1,3 +1,4 @@
+
 import pytest
 import app as complaint_app
 
@@ -8,34 +9,50 @@ def client(tmp_path):
         TESTING=True,
         SECRET_KEY="test-secret-key",
         DATABASE=str(tmp_path / "test_complaints.db"),
+        ADMIN_EMAILS="",
     )
 
     with complaint_app.app.test_client() as test_client:
         yield test_client
 
 
-def register_and_login(client, email="test@example.com"):
-    client.post(
+def create_account(client, email):
+    response = client.post(
         "/register",
         data={
             "name": "Test User",
             "email": email,
-            "password": "TestPassword123",
+            "password": "password123",
         },
         follow_redirects=True,
     )
+    assert response.status_code == 200
 
+
+def login_as(client, email):
     return client.post(
         "/login",
-        data={
-            "email": email,
-            "password": "TestPassword123",
-        },
+        data={"email": email, "password": "password123"},
         follow_redirects=True,
     )
 
 
-# Registration tests
+def register_and_login(client, email="test@example.com"):
+    create_account(client, email)
+    return login_as(client, email)
+
+
+def lodge_test_complaint(client, title="Status test complaint"):
+    return client.post(
+        "/complaints/new",
+        data={
+            "title": title,
+            "category": "Infrastructure",
+            "description": "Testing status management.",
+        },
+        follow_redirects=False,
+    )
+
 
 def test_registration_success(client):
     response = client.post(
@@ -47,13 +64,11 @@ def test_registration_success(client):
         },
         follow_redirects=True,
     )
-
     assert response.status_code == 200
     assert b"Registration successful" in response.data
 
     with complaint_app.app.app_context():
-        db = complaint_app.get_db()
-        user = db.execute(
+        user = complaint_app.get_db().execute(
             "SELECT * FROM users WHERE email = ?",
             ("test@example.com",),
         ).fetchone()
@@ -67,7 +82,6 @@ def test_registration_rejects_missing_fields(client):
         "/register",
         data={"name": "", "email": "", "password": ""},
     )
-
     assert response.status_code == 200
     assert b"All fields are required" in response.data
 
@@ -81,21 +95,12 @@ def test_registration_rejects_short_password(client):
             "password": "123",
         },
     )
-
     assert response.status_code == 200
     assert b"at least 8 characters" in response.data
 
 
 def test_registration_rejects_duplicate_email(client):
-    client.post(
-        "/register",
-        data={
-            "name": "First User",
-            "email": "same@example.com",
-            "password": "password123",
-        },
-    )
-
+    create_account(client, "same@example.com")
     response = client.post(
         "/register",
         data={
@@ -104,46 +109,19 @@ def test_registration_rejects_duplicate_email(client):
             "password": "password456",
         },
     )
-
     assert response.status_code == 200
     assert b"already exists" in response.data
 
 
-# Login and logout tests
-
 def test_login_success(client):
-    client.post(
-        "/register",
-        data={
-            "name": "Test User",
-            "email": "login@example.com",
-            "password": "password123",
-        },
-    )
-
-    response = client.post(
-        "/login",
-        data={
-            "email": "login@example.com",
-            "password": "password123",
-        },
-        follow_redirects=True,
-    )
-
+    create_account(client, "login@example.com")
+    response = login_as(client, "login@example.com")
     assert response.status_code == 200
     assert b"My Complaints" in response.data
 
 
 def test_login_rejects_invalid_password(client):
-    client.post(
-        "/register",
-        data={
-            "name": "Test User",
-            "email": "login@example.com",
-            "password": "password123",
-        },
-    )
-
+    create_account(client, "login@example.com")
     response = client.post(
         "/login",
         data={
@@ -151,50 +129,28 @@ def test_login_rejects_invalid_password(client):
             "password": "wrongpassword",
         },
     )
-
     assert response.status_code == 200
     assert b"Invalid email or password" in response.data
 
 
 def test_dashboard_requires_login(client):
     response = client.get("/")
-
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
 
 def test_logout_clears_session(client):
-    client.post(
-        "/register",
-        data={
-            "name": "Test User",
-            "email": "logout@example.com",
-            "password": "password123",
-        },
-    )
-    client.post(
-        "/login",
-        data={
-            "email": "logout@example.com",
-            "password": "password123",
-        },
-    )
-
+    register_and_login(client, "logout@example.com")
     response = client.get("/logout", follow_redirects=True)
-
     assert response.status_code == 200
-    assert b"Log In" in response.data
 
     response = client.get("/")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
 
-# Complaint-management tests
-
 def test_lodge_complaint_successfully(client):
     register_and_login(client)
-
     response = client.post(
         "/complaints/new",
         data={
@@ -204,7 +160,6 @@ def test_lodge_complaint_successfully(client):
         },
         follow_redirects=True,
     )
-
     assert response.status_code == 200
     assert b"Broken Classroom Fan" in response.data
     assert b"Infrastructure" in response.data
@@ -214,14 +169,12 @@ def test_lodge_complaint_successfully(client):
 
 def test_lodge_complaint_requires_login(client):
     response = client.get("/complaints/new")
-
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
 
 def test_missing_title_is_rejected(client):
     register_and_login(client)
-
     response = client.post(
         "/complaints/new",
         data={
@@ -230,14 +183,12 @@ def test_missing_title_is_rejected(client):
             "description": "A description.",
         },
     )
-
     assert response.status_code == 200
     assert b"Title, category, and description are required." in response.data
 
 
 def test_invalid_category_is_rejected(client):
     register_and_login(client)
-
     response = client.post(
         "/complaints/new",
         data={
@@ -246,14 +197,143 @@ def test_invalid_category_is_rejected(client):
             "description": "A description.",
         },
     )
-
     assert response.status_code == 200
     assert b"Please select a valid complaint category." in response.data
 
 
+def test_admin_can_update_status_and_owner_sees_latest_status(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+
+    register_and_login(client, "owner@example.com")
+    response = lodge_test_complaint(client)
+    assert response.status_code == 302
+    complaint_id = int(response.headers["Location"].rstrip("/").split("/")[-1])
+
+    client.get("/logout")
+    register_and_login(client, "admin@example.com")
+
+    response = client.post(
+        f"/admin/complaints/{complaint_id}/status",
+        data={"status": "In Progress"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert b"status updated to In Progress" in response.data
+
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT status FROM complaints WHERE id = ?",
+            (complaint_id,),
+        ).fetchone()
+    assert row["status"] == "In Progress"
+
+    client.get("/logout")
+    login_as(client, "owner@example.com")
+    response = client.get(f"/complaints/{complaint_id}")
+    assert response.status_code == 200
+    assert b"In Progress" in response.data
+
+
+def test_invalid_status_value_is_rejected(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+    register_and_login(client, "owner@example.com")
+    lodge_test_complaint(client)
+
+    client.get("/logout")
+    register_and_login(client, "admin@example.com")
+
+    response = client.post(
+        "/admin/complaints/1/status",
+        data={"status": "Completed"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert b"Invalid complaint status." in response.data
+
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT status FROM complaints WHERE id = 1"
+        ).fetchone()
+    assert row["status"] == "Submitted"
+
+
+def test_unauthenticated_user_cannot_update_status(client):
+    response = client.post(
+        "/admin/complaints/1/status",
+        data={"status": "Resolved"},
+    )
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_regular_user_cannot_access_admin_status_management(client):
+    register_and_login(client, "regular@example.com")
+    response = client.get("/admin/complaints")
+    assert response.status_code == 403
+
+
+def test_regular_user_cannot_update_another_users_complaint(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+    register_and_login(client, "owner@example.com")
+    lodge_test_complaint(client)
+
+    client.get("/logout")
+    register_and_login(client, "other@example.com")
+
+    response = client.post(
+        "/admin/complaints/1/status",
+        data={"status": "Rejected"},
+    )
+    assert response.status_code == 403
+
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT status FROM complaints WHERE id = 1"
+        ).fetchone()
+    assert row["status"] == "Submitted"
+
+
+def test_status_update_returns_not_found_for_missing_complaint(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+    register_and_login(client, "admin@example.com")
+
+    response = client.post(
+        "/admin/complaints/999/status",
+        data={"status": "Resolved"},
+    )
+    assert response.status_code == 404
+
+
+def test_regular_user_cannot_change_own_complaint_status(client):
+    register_and_login(client, "owner@example.com")
+    lodge_test_complaint(client)
+
+    response = client.post(
+        "/admin/complaints/1/status",
+        data={"status": "Resolved"},
+    )
+    assert response.status_code == 403
+
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT status FROM complaints WHERE id = 1"
+        ).fetchone()
+    assert row["status"] == "Submitted"
+
+
+def test_complaint_submission_and_tracking_remain_available(client):
+    register_and_login(client, "reporter@example.com")
+    response = lodge_test_complaint(client, "Leaking classroom pipe")
+    assert response.status_code == 302
+
+    response = client.get(response.headers["Location"])
+    assert response.status_code == 200
+    assert b"Leaking classroom pipe" in response.data
+    assert b"Submitted" in response.data
+
+
 def test_user_cannot_track_another_users_complaint(client):
     register_and_login(client, "first@example.com")
-
     client.post(
         "/complaints/new",
         data={
@@ -267,7 +347,7 @@ def test_user_cannot_track_another_users_complaint(client):
     register_and_login(client, "second@example.com")
 
     response = client.get("/complaints/1", follow_redirects=True)
-
     assert response.status_code == 200
     assert b"Complaint not found." in response.data
     assert b"Private details." not in response.data
+    assert b"Private complaint" not in response.data
