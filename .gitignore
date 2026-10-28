@@ -10,3 +10,4 @@ venv/
 # Temporary Microsoft Word files
 ~$*.docx
 ~$*.xlsx
+complaints.db

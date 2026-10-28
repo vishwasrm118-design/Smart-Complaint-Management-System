@@ -259,24 +259,58 @@ def track_complaint(complaint_id):
     )
 
 
+
 @app.route("/admin/complaints")
 @admin_required
 def admin_complaints():
+    search_query = request.args.get("q", "").strip()
+    selected_status = request.args.get("status", "").strip()
+
+    if selected_status and selected_status not in COMPLAINT_STATUSES:
+        selected_status = ""
+
+    sql = """
+        SELECT complaints.*,
+               users.name AS user_name,
+               users.email AS user_email
+        FROM complaints
+        JOIN users ON users.id = complaints.user_id
+        WHERE 1 = 1
+    """
+    params = []
+
+    if search_query:
+        term = f"%{search_query}%"
+        sql += """
+            AND (
+                CAST(complaints.id AS TEXT) LIKE ?
+                OR complaints.title LIKE ?
+                OR complaints.description LIKE ?
+                OR users.name LIKE ?
+                OR users.email LIKE ?
+            )
+        """
+        params.extend([term, term, term, term, term])
+
+    if selected_status:
+        sql += " AND complaints.status = ?"
+        params.append(selected_status)
+
+    sql += " ORDER BY complaints.id DESC"
+
     try:
-        complaints = get_db().execute(
-            """SELECT complaints.*, users.name AS user_name, users.email AS user_email
-               FROM complaints
-               JOIN users ON users.id = complaints.user_id
-               ORDER BY complaints.id DESC"""
-        ).fetchall()
+        complaints = get_db().execute(sql, params).fetchall()
     except sqlite3.DatabaseError:
-        app.logger.exception("Could not load complaints for status management")
+        app.logger.exception("Could not load complaints for admin")
         flash("Unable to load complaints right now.")
         complaints = []
+
     return render_template(
         "admin_complaints.html",
         complaints=complaints,
         complaint_statuses=COMPLAINT_STATUSES,
+        search_query=search_query,
+        selected_status=selected_status,
     )
 
 
