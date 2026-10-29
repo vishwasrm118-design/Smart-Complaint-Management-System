@@ -2,21 +2,36 @@
 import os
 import sqlite3
 from functools import wraps
+
 from flask import (
-    Flask, abort, render_template, request, redirect,
-    url_for, session, flash, g
+    Flask,
+    abort,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    flash,
+    g,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+
 app.config["SECRET_KEY"] = os.environ.get(
     "SECRET_KEY", "dev-key-change-before-deployment"
 )
 app.config["DATABASE"] = os.path.join(app.root_path, "complaints.db")
 
-# Configure administrator access with a comma-separated ADMIN_EMAILS environment variable.
+# Configure administrator emails using the ADMIN_EMAILS environment variable.
 app.config["ADMIN_EMAILS"] = os.environ.get("ADMIN_EMAILS", "")
-COMPLAINT_STATUSES = ("Submitted", "In Progress", "Resolved", "Rejected")
+
+COMPLAINT_STATUSES = (
+    "Submitted",
+    "In Progress",
+    "Resolved",
+    "Rejected",
+)
 
 
 def get_db():
@@ -35,6 +50,7 @@ def close_db(error=None):
 
 def init_db():
     db = get_db()
+
     db.executescript("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,12 +73,21 @@ def init_db():
 
     columns = {
         row["name"]
-        for row in db.execute("PRAGMA table_info(complaints)").fetchall()
+        for row in db.execute(
+            "PRAGMA table_info(complaints)"
+        ).fetchall()
     }
+
     if "category" not in columns:
         db.execute(
             "ALTER TABLE complaints "
             "ADD COLUMN category TEXT NOT NULL DEFAULT 'Other'"
+        )
+
+    if "resolution_remarks" not in columns:
+        db.execute(
+            "ALTER TABLE complaints "
+            "ADD COLUMN resolution_remarks TEXT"
         )
 
     db.commit()
@@ -79,16 +104,20 @@ def login_required(view):
         if "user_id" not in session:
             flash("Please log in first.")
             return redirect(url_for("login"))
+
         return view(*args, **kwargs)
+
     return wrapped_view
 
 
 def configured_admin_emails():
     configured = app.config.get("ADMIN_EMAILS", "")
+
     if isinstance(configured, str):
         values = configured.split(",")
     else:
         values = configured
+
     return {
         str(email).strip().lower()
         for email in values
@@ -98,12 +127,20 @@ def configured_admin_emails():
 
 def current_user_is_admin():
     user_id = session.get("user_id")
+
     if user_id is None:
         return False
+
     user = get_db().execute(
-        "SELECT email FROM users WHERE id = ?", (user_id,)
+        "SELECT email FROM users WHERE id = ?",
+        (user_id,),
     ).fetchone()
-    return user is not None and user["email"].strip().lower() in configured_admin_emails()
+
+    return (
+        user is not None
+        and user["email"].strip().lower()
+        in configured_admin_emails()
+    )
 
 
 @app.context_processor
@@ -112,16 +149,21 @@ def inject_admin_access():
 
 
 def admin_required(view):
-    """Allow only logged-in users whose database email is explicitly configured as admin."""
+    """Allow access only to logged-in users configured as administrators."""
+
     @wraps(view)
     def wrapped_view(*args, **kwargs):
         if "user_id" not in session:
             flash("Please log in first.")
             return redirect(url_for("login"))
+
         if not current_user_is_admin():
             abort(403)
+
         return view(*args, **kwargs)
+
     return wrapped_view
+
 
 @app.route("/")
 def dashboard():
@@ -129,12 +171,19 @@ def dashboard():
         return redirect(url_for("login"))
 
     complaints = get_db().execute(
-        """SELECT * FROM complaints
-           WHERE user_id = ? ORDER BY id DESC""",
-        (session["user_id"],)
+        """
+        SELECT *
+        FROM complaints
+        WHERE user_id = ?
+        ORDER BY id DESC
+        """,
+        (session["user_id"],),
     ).fetchall()
 
-    return render_template("dashboard.html", complaints=complaints)
+    return render_template(
+        "dashboard.html",
+        complaints=complaints,
+    )
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -155,11 +204,14 @@ def register():
         try:
             db = get_db()
             db.execute(
-                """INSERT INTO users (name, email, password_hash)
-                   VALUES (?, ?, ?)""",
-                (name, email, generate_password_hash(password))
+                """
+                INSERT INTO users (name, email, password_hash)
+                VALUES (?, ?, ?)
+                """,
+                (name, email, generate_password_hash(password)),
             )
             db.commit()
+
         except sqlite3.IntegrityError:
             flash("An account with this email already exists.")
             return render_template("register.html")
@@ -177,7 +229,8 @@ def login():
         password = request.form.get("password", "")
 
         user = get_db().execute(
-            "SELECT * FROM users WHERE email = ?", (email,)
+            "SELECT * FROM users WHERE email = ?",
+            (email,),
         ).fetchone()
 
         if user is None or not check_password_hash(
@@ -189,6 +242,7 @@ def login():
         session.clear()
         session["user_id"] = user["id"]
         session["user_name"] = user["name"]
+
         return redirect(url_for("dashboard"))
 
     return render_template("login.html")
@@ -226,17 +280,28 @@ def lodge_complaint():
 
         db = get_db()
         cursor = db.execute(
-            """INSERT INTO complaints
-               (user_id, title, category, description)
-               VALUES (?, ?, ?, ?)""",
-            (session["user_id"], title, category, description)
+            """
+            INSERT INTO complaints
+                (user_id, title, category, description)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                session["user_id"],
+                title,
+                category,
+                description,
+            ),
         )
         db.commit()
 
-        # The database-generated ID uniquely identifies this complaint.
         complaint_id = cursor.lastrowid
-        return redirect(url_for("track_complaint",
-                                complaint_id=complaint_id))
+
+        return redirect(
+            url_for(
+                "track_complaint",
+                complaint_id=complaint_id,
+            )
+        )
 
     return render_template("lodge_complaint.html")
 
@@ -245,9 +310,12 @@ def lodge_complaint():
 @login_required
 def track_complaint(complaint_id):
     complaint = get_db().execute(
-        """SELECT * FROM complaints
-           WHERE id = ? AND user_id = ?""",
-        (complaint_id, session["user_id"])
+        """
+        SELECT *
+        FROM complaints
+        WHERE id = ? AND user_id = ?
+        """,
+        (complaint_id, session["user_id"]),
     ).fetchone()
 
     if complaint is None:
@@ -255,9 +323,9 @@ def track_complaint(complaint_id):
         return redirect(url_for("dashboard"))
 
     return render_template(
-        "track_complaint.html", complaint=complaint
+        "track_complaint.html",
+        complaint=complaint,
     )
-
 
 
 @app.route("/admin/complaints")
@@ -266,7 +334,10 @@ def admin_complaints():
     search_query = request.args.get("q", "").strip()
     selected_status = request.args.get("status", "").strip()
 
-    if selected_status and selected_status not in COMPLAINT_STATUSES:
+    if (
+        selected_status
+        and selected_status not in COMPLAINT_STATUSES
+    ):
         selected_status = ""
 
     sql = """
@@ -277,10 +348,12 @@ def admin_complaints():
         JOIN users ON users.id = complaints.user_id
         WHERE 1 = 1
     """
+
     params = []
 
     if search_query:
         term = f"%{search_query}%"
+
         sql += """
             AND (
                 CAST(complaints.id AS TEXT) LIKE ?
@@ -290,6 +363,7 @@ def admin_complaints():
                 OR users.email LIKE ?
             )
         """
+
         params.extend([term, term, term, term, term])
 
     if selected_status:
@@ -299,9 +373,15 @@ def admin_complaints():
     sql += " ORDER BY complaints.id DESC"
 
     try:
-        complaints = get_db().execute(sql, params).fetchall()
+        complaints = get_db().execute(
+            sql,
+            params,
+        ).fetchall()
+
     except sqlite3.DatabaseError:
-        app.logger.exception("Could not load complaints for admin")
+        app.logger.exception(
+            "Could not load complaints for admin"
+        )
         flash("Unable to load complaints right now.")
         complaints = []
 
@@ -314,31 +394,80 @@ def admin_complaints():
     )
 
 
-@app.route("/admin/complaints/<int:complaint_id>/status", methods=["POST"])
+@app.route(
+    "/admin/complaints/<int:complaint_id>/status",
+    methods=["POST"],
+)
 @admin_required
 def update_complaint_status(complaint_id):
     new_status = request.form.get("status", "").strip()
+    resolution_remarks = request.form.get(
+        "resolution_remarks", ""
+    ).strip()
+
     if new_status not in COMPLAINT_STATUSES:
         flash("Invalid complaint status.")
         return redirect(url_for("admin_complaints"))
 
-    db = get_db()
-    try:
-        cursor = db.execute(
-            "UPDATE complaints SET status = ? WHERE id = ?",
-            (new_status, complaint_id),
-        )
-        if cursor.rowcount == 0:
-            db.rollback()
-            abort(404)
-        db.commit()
-    except sqlite3.DatabaseError:
-        db.rollback()
-        app.logger.exception("Could not update complaint status")
-        flash("Unable to update the complaint status. Please try again.")
+    if len(resolution_remarks) > 1000:
+        flash("Resolution remarks must not exceed 1000 characters.")
         return redirect(url_for("admin_complaints"))
 
-    flash(f"Complaint #{complaint_id} status updated to {new_status}.")
+    db = get_db()
+
+    try:
+        # Check that the complaint exists first.
+        complaint = db.execute(
+            "SELECT id FROM complaints WHERE id = ?",
+            (complaint_id,),
+        ).fetchone()
+
+        if complaint is None:
+            abort(404)
+
+        # Require remarks when resolving a complaint.
+        if new_status == "Resolved" and not resolution_remarks:
+            flash(
+                "Please enter resolution remarks before resolving "
+                "the complaint."
+            )
+            return redirect(url_for("admin_complaints"))
+
+        # Save the remarks when resolved.
+        # Preserve existing remarks when changing to another status.
+        db.execute(
+            """
+            UPDATE complaints
+            SET status = ?,
+                resolution_remarks = CASE
+                    WHEN ? = 'Resolved' THEN ?
+                    ELSE resolution_remarks
+                END
+            WHERE id = ?
+            """,
+            (
+                new_status,
+                new_status,
+                resolution_remarks,
+                complaint_id,
+            ),
+        )
+
+        db.commit()
+
+    except sqlite3.DatabaseError:
+        db.rollback()
+        app.logger.exception(
+            "Could not update complaint status"
+        )
+        flash(
+            "Unable to update the complaint status. Please try again."
+        )
+        return redirect(url_for("admin_complaints"))
+
+    flash(
+        f"Complaint #{complaint_id} status updated to {new_status}."
+    )
     return redirect(url_for("admin_complaints"))
 
 

@@ -1,4 +1,4 @@
-
+```html
 {% extends "base.html" %}
 
 {% block content %}
@@ -40,33 +40,59 @@
                     <th>Submitted By</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
+                    <th>Resolution Remarks</th>
                     <th>Update Status</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for complaint in complaints %}
                 <tr>
                     <td>#{{ complaint.id }}</td>
+
                     <td>
                         <strong>{{ complaint.title }}</strong>
                         <p>{{ complaint.description }}</p>
                     </td>
+
                     <td>{{ complaint.category or "Other" }}</td>
+
                     <td>
                         {{ complaint.user_name }}<br>
                         <small>{{ complaint.user_email }}</small>
                     </td>
+
                     <td>{{ complaint.created_at }}</td>
+
                     <td>
                         <span class="status-badge">
                             {{ complaint.status }}
                         </span>
                     </td>
+
+                    <td>
+                        {% if complaint.resolution_remarks %}
+                            {{ complaint.resolution_remarks }}
+                        {% else %}
+                            <span>Not provided</span>
+                        {% endif %}
+                    </td>
+
                     <td>
                         <form method="POST"
-                              action="{{ url_for('update_complaint_status',
-                                                  complaint_id=complaint.id) }}">
-                            <select name="status" required>
+                              action="{{ url_for(
+                                  'update_complaint_status',
+                                  complaint_id=complaint.id
+                              ) }}">
+
+                            <label for="status-{{ complaint.id }}">
+                                Status
+                            </label>
+
+                            <select
+                                id="status-{{ complaint.id }}"
+                                name="status"
+                                required>
                                 {% for status in complaint_statuses %}
                                 <option value="{{ status }}"
                                     {% if complaint.status == status %}selected{% endif %}>
@@ -74,6 +100,19 @@
                                 </option>
                                 {% endfor %}
                             </select>
+
+                            <label for="remarks-{{ complaint.id }}">
+                                Resolution Remarks
+                            </label>
+
+                            <textarea
+                                id="remarks-{{ complaint.id }}"
+                                name="resolution_remarks"
+                                rows="3"
+                                maxlength="1000"
+                                placeholder="Enter how the complaint was resolved..."
+                            >{{ complaint.resolution_remarks or '' }}</textarea>
+
                             <button type="submit">Save</button>
                         </form>
                     </td>
@@ -83,9 +122,12 @@
         </table>
     </div>
     {% else %}
-    <p>No complaints match your search.</p>
+        <p>No complaints match your search.</p>
     {% endif %}
 
-    <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+    <p>
+        <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+    </p>
 </div>
 {% endblock %}
+```
