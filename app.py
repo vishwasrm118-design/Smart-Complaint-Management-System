@@ -23,15 +23,13 @@ app.config["SECRET_KEY"] = os.environ.get(
 )
 app.config["DATABASE"] = os.path.join(app.root_path, "complaints.db")
 
-# Configure administrator emails using the ADMIN_EMAILS environment variable.
-app.config["ADMIN_EMAILS"] = os.environ.get("ADMIN_EMAILS", "")
-
-COMPLAINT_STATUSES = (
-    "Submitted",
-    "In Progress",
-    "Resolved",
-    "Rejected",
+# Configure administrator access with a comma-separated ADMIN_EMAILS environment variable.
+# Local-development default: admin@gmail.com is treated as an administrator.
+# Override ADMIN_EMAILS in the environment for other accounts or deployments.
+app.config["ADMIN_EMAILS"] = os.environ.get(
+    "ADMIN_EMAILS", "admin@gmail.com"
 )
+COMPLAINT_STATUSES = ("Submitted", "In Progress", "Resolved", "Rejected")
 
 
 def get_db():
