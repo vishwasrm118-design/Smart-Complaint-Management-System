@@ -16,7 +16,7 @@
             <nav>
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
                 <a href="{{ url_for('lodge_complaint') }}">Lodge Complaint</a>
-                <a href="{{ url_for('dashboard') }}">Track Complaints</a>
+                <a href="{{ url_for('complaint_history') }}">Complaint History</a>
 
                 {% if current_user_is_admin() %}
                     <a href="{{ url_for('admin_complaints') }}">Complaint Status Management</a>

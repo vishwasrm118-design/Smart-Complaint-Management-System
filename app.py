@@ -184,6 +184,25 @@ def dashboard():
     )
 
 
+@app.route("/complaint-history")
+@login_required
+def complaint_history():
+    complaints = get_db().execute(
+        """
+        SELECT id, title, category, description, status,
+               created_at, resolution_remarks
+        FROM complaints
+        WHERE user_id = ?
+        ORDER BY created_at DESC, id DESC
+        """,
+        (session["user_id"],),
+    ).fetchall()
+
+    return render_template(
+        "complaint_history.html",
+        complaints=complaints,
+    )
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":

@@ -1,0 +1,108 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <p class="dashboard-eyebrow">COMPLAINT MANAGEMENT</p>
+        <h2>My Complaint History</h2>
+        <p class="dashboard-subtitle">
+            View all your previously submitted complaints and their progress.
+        </p>
+    </div>
+
+    <a class="btn btn-primary"
+       href="{{ url_for('lodge_complaint') }}">
+        + Lodge a Complaint
+    </a>
+</div>
+
+<div class="complaints-panel">
+    <div class="panel-heading">
+        <div>
+            <h3>All Complaints</h3>
+            <p>Your complete complaint submission history.</p>
+        </div>
+
+        <span class="complaint-count">
+            {{ complaints|length }} total
+        </span>
+    </div>
+
+    {% if complaints %}
+    <div class="table-wrapper">
+        <table class="complaints-table">
+            <thead>
+                <tr>
+                    <th>Complaint ID</th>
+                    <th>Title & Description</th>
+                    <th>Category</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Resolution Remarks</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for complaint in complaints %}
+                <tr>
+                    <td>
+                        <span class="complaint-id">
+                            #{{ complaint.id }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="complaint-title">
+                            {{ complaint.title }}
+                        </span>
+                        <p>{{ complaint.description }}</p>
+                    </td>
+
+                    <td>{{ complaint.category }}</td>
+
+                    <td>{{ complaint.created_at }}</td>
+
+                    <td>
+                        {% set status = complaint.status|lower %}
+                        <span class="status-badge
+                            {% if status == 'resolved' %}status-resolved
+                            {% elif status == 'in progress' %}status-progress
+                            {% elif status == 'rejected' %}status-rejected
+                            {% else %}status-pending{% endif %}">
+                            {{ complaint.status }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ complaint.resolution_remarks or 'Not available' }}
+                    </td>
+
+                    <td>
+                        <a class="btn btn-small"
+                           href="{{ url_for('track_complaint',
+                                           complaint_id=complaint.id) }}">
+                            Track →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No complaint history found</h3>
+        <p>You haven't submitted any complaints yet.</p>
+
+        <a class="btn btn-primary"
+           href="{{ url_for('lodge_complaint') }}">
+            Lodge Your First Complaint
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
