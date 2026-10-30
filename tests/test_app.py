@@ -397,3 +397,89 @@ def test_empty_complaint_history(client):
 
     assert response.status_code == 200
     assert b"No complaint history found" in response.data
+
+def test_admin_dashboard_requires_login(client):
+    response = client.get("/admin/dashboard")
+
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_regular_user_cannot_access_admin_dashboard(client):
+    register_and_login(client, "regular@example.com")
+
+    response = client.get("/admin/dashboard")
+
+    assert response.status_code == 403
+
+
+def test_admin_dashboard_shows_correct_statistics(client):
+    # Configure this email as an administrator.
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+
+    # Create and log in the administrator.
+    create_account(client, "admin@example.com")
+    login_as(client, "admin@example.com")
+
+    # Create a regular user who will submit complaints.
+    client.get("/logout")
+    create_account(client, "student@example.com")
+    login_as(client, "student@example.com")
+
+    # Submit two complaints.
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Broken classroom fan",
+            "category": "Infrastructure",
+            "description": "The fan is not working.",
+        },
+    )
+
+    client.post(
+        "/complaints/new",
+        data={
+           "title": "Library computer issue",
+"category": "Electrical",
+"description": "The computer will not start.",
+        },
+    )
+
+    # Log in as the administrator and open the dashboard.
+    client.get("/logout")
+    login_as(client, "admin@example.com")
+
+    response = client.get("/admin/dashboard")
+
+    assert response.status_code == 200
+    assert b"Admin Dashboard" in response.data
+    assert b"Total Complaints" in response.data
+    assert b"Total Users" in response.data
+    assert b"Broken classroom fan" in response.data
+    assert b"Library computer issue" in response.data
+
+    # Verify the statistics directly in the test database.
+    with complaint_app.app.app_context():
+        db = complaint_app.get_db()
+
+        assert db.execute(
+            "SELECT COUNT(*) FROM complaints"
+        ).fetchone()[0] == 2
+
+        assert db.execute(
+            "SELECT COUNT(*) FROM users"
+        ).fetchone()[0] == 2
+
+
+def test_admin_dashboard_handles_empty_database(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+
+    create_account(client, "admin@example.com")
+    login_as(client, "admin@example.com")
+
+    response = client.get("/admin/dashboard")
+
+    assert response.status_code == 200
+    assert b"Admin Dashboard" in response.data
+    assert b"No complaints have been submitted yet." in response.data
+    assert b"No complaint categories to display yet." in response.data
