@@ -351,3 +351,49 @@ def test_user_cannot_track_another_users_complaint(client):
     assert b"Complaint not found." in response.data
     assert b"Private details." not in response.data
     assert b"Private complaint" not in response.data
+
+
+def test_complaint_history_requires_login(client):
+    response = client.get("/complaint-history")
+
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_user_can_view_own_complaint_history(client):
+    register_and_login(client, "history@example.com")
+
+    lodge_test_complaint(client, "Broken classroom fan")
+    lodge_test_complaint(client, "Water leakage")
+
+    response = client.get("/complaint-history")
+
+    assert response.status_code == 200
+    assert b"My Complaint History" in response.data
+    assert b"Broken classroom fan" in response.data
+    assert b"Water leakage" in response.data
+    assert b"Infrastructure" in response.data
+
+
+def test_user_cannot_view_another_users_complaint_history(client):
+    register_and_login(client, "first@example.com")
+
+    lodge_test_complaint(client, "Private complaint")
+
+    client.get("/logout")
+    register_and_login(client, "second@example.com")
+
+    response = client.get("/complaint-history")
+
+    assert response.status_code == 200
+    assert b"Private complaint" not in response.data
+    assert b"Testing status management." not in response.data
+
+
+def test_empty_complaint_history(client):
+    register_and_login(client, "empty@example.com")
+
+    response = client.get("/complaint-history")
+
+    assert response.status_code == 200
+    assert b"No complaint history found" in response.data
