@@ -343,7 +343,68 @@ def track_complaint(complaint_id):
         "track_complaint.html",
         complaint=complaint,
     )
+@app.route("/admin/dashboard")
+@admin_required
+def admin_dashboard():
+    db = get_db()
 
+    total_complaints = db.execute(
+        "SELECT COUNT(*) FROM complaints"
+    ).fetchone()[0]
+
+    status_rows = db.execute(
+        """
+        SELECT status, COUNT(*) AS total
+        FROM complaints
+        GROUP BY status
+        """
+    ).fetchall()
+
+    status_counts = {
+        status: 0 for status in COMPLAINT_STATUSES
+    }
+
+    for row in status_rows:
+        if row["status"] in status_counts:
+            status_counts[row["status"]] = row["total"]
+
+    total_users = db.execute(
+        "SELECT COUNT(*) FROM users"
+    ).fetchone()[0]
+
+    recent_complaints = db.execute(
+        """
+        SELECT complaints.id,
+               complaints.title,
+               complaints.category,
+               complaints.status,
+               complaints.created_at,
+               users.name AS user_name
+        FROM complaints
+        JOIN users ON users.id = complaints.user_id
+        ORDER BY complaints.id DESC
+        LIMIT 5
+        """
+    ).fetchall()
+
+    category_counts = db.execute(
+        """
+        SELECT category, COUNT(*) AS total
+        FROM complaints
+        GROUP BY category
+        ORDER BY total DESC, category ASC
+        """
+    ).fetchall()
+
+    return render_template(
+        "admin_dashboard.html",
+        total_complaints=total_complaints,
+        total_users=total_users,
+        status_counts=status_counts,
+        complaint_statuses=COMPLAINT_STATUSES,
+        category_counts=category_counts,
+        recent_complaints=recent_complaints,
+    )
 
 @app.route("/admin/complaints")
 @admin_required
