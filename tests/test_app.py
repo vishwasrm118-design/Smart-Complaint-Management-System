@@ -483,3 +483,181 @@ def test_admin_dashboard_handles_empty_database(client):
     assert b"Admin Dashboard" in response.data
     assert b"No complaints have been submitted yet." in response.data
     assert b"No complaint categories to display yet." in response.data
+
+
+
+def test_user_can_search_complaint_history_by_title(client):
+    register_and_login(client, "searchuser@example.com")
+    lodge_test_complaint(client, "Broken classroom fan")
+    lodge_test_complaint(client, "Water leakage")
+
+    response = client.get(
+        "/complaint-history?q=Broken+classroom+fan"
+    )
+
+    assert response.status_code == 200
+    assert b"Broken classroom fan" in response.data
+    assert b"Water leakage" not in response.data
+
+
+def test_user_can_filter_complaint_history_by_category(client):
+    register_and_login(client, "categoryuser@example.com")
+    lodge_test_complaint(client, "Broken classroom fan")
+
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Electrical wiring issue",
+            "category": "Electrical",
+            "description": "Wiring needs repair.",
+        },
+    )
+
+    response = client.get(
+        "/complaint-history?category=Electrical"
+    )
+
+    assert response.status_code == 200
+    assert b"Electrical wiring issue" in response.data
+    assert b"Broken classroom fan" not in response.data
+
+
+def test_user_can_filter_complaint_history_by_status(client):
+    register_and_login(client, "statusfilter@example.com")
+    lodge_test_complaint(client, "Complaint to resolve")
+    lodge_test_complaint(client, "Complaint still submitted")
+
+    with complaint_app.app.app_context():
+        complaint_app.get_db().execute(
+            "UPDATE complaints SET status = ? WHERE title = ?",
+            ("Resolved", "Complaint to resolve"),
+        )
+        complaint_app.get_db().commit()
+
+    response = client.get("/complaint-history?status=Resolved")
+
+    assert response.status_code == 200
+    assert b"Complaint to resolve" in response.data
+    assert b"Complaint still submitted" not in response.data
+
+
+def test_user_can_combine_complaint_history_filters(client):
+    register_and_login(client, "combinedfilter@example.com")
+
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Electrical fan repair",
+            "category": "Electrical",
+            "description": "Fan is broken.",
+        },
+    )
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Electrical light repair",
+            "category": "Electrical",
+            "description": "Light is broken.",
+        },
+    )
+
+    response = client.get(
+        "/complaint-history?q=fan&category=Electrical"
+    )
+
+    assert response.status_code == 200
+    assert b"Electrical fan repair" in response.data
+    assert b"Electrical light repair" not in response.data
+
+
+def test_user_search_does_not_show_other_users_complaints(client):
+    register_and_login(client, "firstsearch@example.com")
+    lodge_test_complaint(client, "My private complaint")
+
+    client.get("/logout")
+    register_and_login(client, "secondsearch@example.com")
+
+    response = client.get(
+        "/complaint-history?q=private"
+    )
+
+    assert response.status_code == 200
+    assert b"My private complaint" not in response.data
+
+
+def test_admin_can_search_complaints_by_description(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+
+    register_and_login(client, "reporter@example.com")
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Classroom problem",
+            "category": "Infrastructure",
+            "description": "Projector screen is damaged.",
+        },
+    )
+
+    client.get("/logout")
+    register_and_login(client, "admin@example.com")
+
+    response = client.get(
+        "/admin/complaints?q=Projector+screen"
+    )
+
+    assert response.status_code == 200
+    assert b"Classroom problem" in response.data
+
+
+def test_admin_can_combine_status_and_category_filters(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+
+    register_and_login(client, "reporter@example.com")
+
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Electrical issue resolved",
+            "category": "Electrical",
+            "description": "First electrical complaint.",
+        },
+    )
+    client.post(
+        "/complaints/new",
+        data={
+            "title": "Electrical issue submitted",
+            "category": "Electrical",
+            "description": "Second electrical complaint.",
+        },
+    )
+
+    with complaint_app.app.app_context():
+        complaint_app.get_db().execute(
+            "UPDATE complaints SET status = ? WHERE title = ?",
+            ("Resolved", "Electrical issue resolved"),
+        )
+        complaint_app.get_db().commit()
+
+    client.get("/logout")
+    register_and_login(client, "admin@example.com")
+
+    response = client.get(
+        "/admin/complaints?status=Resolved&category=Electrical"
+    )
+
+    assert response.status_code == 200
+    assert b"Electrical issue resolved" in response.data
+    assert b"Electrical issue submitted" not in response.data
+
+
+
+def test_admin_search_with_no_matches_shows_empty_state(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+    register_and_login(client, "admin@example.com")
+
+    response = client.get(
+        "/admin/complaints?q=NoSuchComplaint12345"
+    )
+
+    assert response.status_code == 200
+    assert b"No complaints match your search." in response.data
