@@ -30,6 +30,13 @@ app.config["ADMIN_EMAILS"] = os.environ.get(
     "ADMIN_EMAILS", "admin@gmail.com"
 )
 COMPLAINT_STATUSES = ("Submitted", "In Progress", "Resolved", "Rejected")
+COMPLAINT_CATEGORIES = (
+    "Infrastructure",
+    "Electrical",
+    "Water Supply",
+    "Cleanliness",
+    "Other",
+)
 
 
 def get_db():
@@ -184,24 +191,60 @@ def dashboard():
     )
 
 
+
 @app.route("/complaint-history")
 @login_required
 def complaint_history():
-    complaints = get_db().execute(
-        """
+    search_query = request.args.get("q", "").strip()
+    selected_status = request.args.get("status", "").strip()
+    selected_category = request.args.get("category", "").strip()
+
+    if selected_status not in COMPLAINT_STATUSES:
+        selected_status = ""
+
+    if selected_category not in COMPLAINT_CATEGORIES:
+        selected_category = ""
+
+    sql = """
         SELECT id, title, category, description, status,
                created_at, resolution_remarks
         FROM complaints
         WHERE user_id = ?
-        ORDER BY created_at DESC, id DESC
-        """,
-        (session["user_id"],),
-    ).fetchall()
+    """
+    params = [session["user_id"]]
+
+    if search_query:
+        term = f"%{search_query}%"
+        sql += """
+            AND (
+                CAST(id AS TEXT) LIKE ?
+                OR title LIKE ?
+            )
+        """
+        params.extend([term, term])
+
+    if selected_status:
+        sql += " AND status = ?"
+        params.append(selected_status)
+
+    if selected_category:
+        sql += " AND category = ?"
+        params.append(selected_category)
+
+    sql += " ORDER BY created_at DESC, id DESC"
+
+    complaints = get_db().execute(sql, params).fetchall()
 
     return render_template(
         "complaint_history.html",
         complaints=complaints,
+        complaint_statuses=COMPLAINT_STATUSES,
+        complaint_categories=COMPLAINT_CATEGORIES,
+        search_query=search_query,
+        selected_status=selected_status,
+        selected_category=selected_category,
     )
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -406,17 +449,19 @@ def admin_dashboard():
         recent_complaints=recent_complaints,
     )
 
+
 @app.route("/admin/complaints")
 @admin_required
 def admin_complaints():
     search_query = request.args.get("q", "").strip()
     selected_status = request.args.get("status", "").strip()
+    selected_category = request.args.get("category", "").strip()
 
-    if (
-        selected_status
-        and selected_status not in COMPLAINT_STATUSES
-    ):
+    if selected_status not in COMPLAINT_STATUSES:
         selected_status = ""
+
+    if selected_category not in COMPLAINT_CATEGORIES:
+        selected_category = ""
 
     sql = """
         SELECT complaints.*,
@@ -426,12 +471,10 @@ def admin_complaints():
         JOIN users ON users.id = complaints.user_id
         WHERE 1 = 1
     """
-
     params = []
 
     if search_query:
         term = f"%{search_query}%"
-
         sql += """
             AND (
                 CAST(complaints.id AS TEXT) LIKE ?
@@ -441,25 +484,22 @@ def admin_complaints():
                 OR users.email LIKE ?
             )
         """
-
         params.extend([term, term, term, term, term])
 
     if selected_status:
         sql += " AND complaints.status = ?"
         params.append(selected_status)
 
+    if selected_category:
+        sql += " AND complaints.category = ?"
+        params.append(selected_category)
+
     sql += " ORDER BY complaints.id DESC"
 
     try:
-        complaints = get_db().execute(
-            sql,
-            params,
-        ).fetchall()
-
+        complaints = get_db().execute(sql, params).fetchall()
     except sqlite3.DatabaseError:
-        app.logger.exception(
-            "Could not load complaints for admin"
-        )
+        app.logger.exception("Could not load complaints for admin")
         flash("Unable to load complaints right now.")
         complaints = []
 
@@ -467,9 +507,12 @@ def admin_complaints():
         "admin_complaints.html",
         complaints=complaints,
         complaint_statuses=COMPLAINT_STATUSES,
+        complaint_categories=COMPLAINT_CATEGORIES,
         search_query=search_query,
         selected_status=selected_status,
+        selected_category=selected_category,
     )
+
 
 
 @app.route(
