@@ -74,6 +74,17 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            complaint_id INTEGER NOT NULL,
+            message TEXT NOT NULL,
+            is_read INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (complaint_id) REFERENCES complaints(id)
+        );
     """)
 
     columns = {
@@ -151,6 +162,18 @@ def current_user_is_admin():
 @app.context_processor
 def inject_admin_access():
     return {"current_user_is_admin": current_user_is_admin}
+
+
+@app.context_processor
+def inject_unread_notification_count():
+    user_id = session.get("user_id")
+    unread_count = 0
+    if user_id is not None:
+        unread_count = get_db().execute(
+            "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user_id,),
+        ).fetchone()[0]
+    return {"unread_notification_count": unread_count}
 
 
 def admin_required(view):
@@ -515,6 +538,48 @@ def admin_complaints():
 
 
 
+@app.route("/notifications")
+@login_required
+def notifications():
+    user_notifications = get_db().execute(
+        """SELECT notifications.*, complaints.title AS complaint_title
+           FROM notifications
+           JOIN complaints ON complaints.id = notifications.complaint_id
+           WHERE notifications.user_id = ?
+           ORDER BY notifications.created_at DESC, notifications.id DESC""",
+        (session["user_id"],),
+    ).fetchall()
+    return render_template("notifications.html", notifications=user_notifications)
+
+
+@app.route("/notifications/<int:notification_id>/read", methods=["POST"])
+@login_required
+def mark_notification_read(notification_id):
+    db = get_db()
+    cursor = db.execute(
+        "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+        (notification_id, session["user_id"]),
+    )
+    if cursor.rowcount == 0:
+        abort(404)
+    db.commit()
+    flash("Notification marked as read.", "success")
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/mark-all-read", methods=["POST"])
+@login_required
+def mark_all_notifications_read():
+    db = get_db()
+    db.execute(
+        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+        (session["user_id"],),
+    )
+    db.commit()
+    flash("All notifications marked as read.", "success")
+    return redirect(url_for("notifications"))
+
+
 @app.route(
     "/admin/complaints/<int:complaint_id>/status",
     methods=["POST"],
@@ -522,9 +587,7 @@ def admin_complaints():
 @admin_required
 def update_complaint_status(complaint_id):
     new_status = request.form.get("status", "").strip()
-    resolution_remarks = request.form.get(
-        "resolution_remarks", ""
-    ).strip()
+    resolution_remarks = request.form.get("resolution_remarks", "").strip()
 
     if new_status not in COMPLAINT_STATUSES:
         flash("Invalid complaint status.")
@@ -535,60 +598,52 @@ def update_complaint_status(complaint_id):
         return redirect(url_for("admin_complaints"))
 
     db = get_db()
-
     try:
-        # Check that the complaint exists first.
         complaint = db.execute(
-            "SELECT id FROM complaints WHERE id = ?",
+            "SELECT id, user_id, status FROM complaints WHERE id = ?",
             (complaint_id,),
         ).fetchone()
-
         if complaint is None:
             abort(404)
 
-        # Require remarks when resolving a complaint.
         if new_status == "Resolved" and not resolution_remarks:
-            flash(
-                "Please enter resolution remarks before resolving "
-                "the complaint."
-            )
+            flash("Please enter resolution remarks before resolving the complaint.")
             return redirect(url_for("admin_complaints"))
 
-        # Save the remarks when resolved.
-        # Preserve existing remarks when changing to another status.
-        db.execute(
-            """
-            UPDATE complaints
-            SET status = ?,
-                resolution_remarks = CASE
-                    WHEN ? = 'Resolved' THEN ?
-                    ELSE resolution_remarks
-                END
-            WHERE id = ?
-            """,
-            (
-                new_status,
-                new_status,
-                resolution_remarks,
-                complaint_id,
-            ),
-        )
-
-        db.commit()
-
+        old_status = complaint["status"]
+        if old_status != new_status:
+            db.execute(
+                """UPDATE complaints
+                   SET status = ?,
+                       resolution_remarks = CASE
+                           WHEN ? = 'Resolved' THEN ?
+                           ELSE resolution_remarks
+                       END
+                   WHERE id = ?""",
+                (new_status, new_status, resolution_remarks, complaint_id),
+            )
+            if new_status == "Resolved":
+                message = f"Your complaint #{complaint_id} has been resolved."
+            else:
+                message = f"Your complaint #{complaint_id} is now {new_status}."
+            db.execute(
+                """INSERT INTO notifications
+                   (user_id, complaint_id, message)
+                   VALUES (?, ?, ?)""",
+                (complaint["user_id"], complaint_id, message),
+            )
+            db.commit()
+        else:
+            # A repeated submission of the same status is not a status change
+            # and therefore must not generate a duplicate notification.
+            db.rollback()
     except sqlite3.DatabaseError:
         db.rollback()
-        app.logger.exception(
-            "Could not update complaint status"
-        )
-        flash(
-            "Unable to update the complaint status. Please try again."
-        )
+        app.logger.exception("Could not update complaint status or create notification")
+        flash("Unable to update the complaint status. Please try again.")
         return redirect(url_for("admin_complaints"))
 
-    flash(
-        f"Complaint #{complaint_id} status updated to {new_status}."
-    )
+    flash(f"Complaint #{complaint_id} status updated to {new_status}.")
     return redirect(url_for("admin_complaints"))
 
 

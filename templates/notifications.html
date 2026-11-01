@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="notifications-page">
+    <h2>My Notifications</h2>
+
+    {% if notifications %}
+        {% if unread_notification_count > 0 %}
+        <form method="POST" action="{{ url_for('mark_all_notifications_read') }}">
+            <button type="submit">Mark All as Read</button>
+        </form>
+        {% endif %}
+
+        <div class="notification-list">
+            {% for notification in notifications %}
+            <article class="notification-item {% if notification.is_read %}read{% else %}unread{% endif %}">
+                <p>
+                    <strong>{% if notification.is_read %}Read{% else %}Unread{% endif %}</strong>
+                    {{ notification.message }}
+                </p>
+                <p>Complaint ID: #{{ notification.complaint_id }}</p>
+                <p>Date: {{ notification.created_at }}</p>
+                <p><a href="{{ url_for('track_complaint', complaint_id=notification.complaint_id) }}">Track Complaint</a></p>
+                {% if not notification.is_read %}
+                <form method="POST" action="{{ url_for('mark_notification_read', notification_id=notification.id) }}">
+                    <button type="submit">Mark as Read</button>
+                </form>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You have no notifications yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
