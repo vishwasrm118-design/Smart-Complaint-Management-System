@@ -661,3 +661,248 @@ def test_admin_search_with_no_matches_shows_empty_state(client):
 
     assert response.status_code == 200
     assert b"No complaints match your search." in response.data
+def _create_feedback_test_complaint(client, email, title, status="Resolved"):
+    client.post(
+        "/complaints/new",
+        data={
+            "title": title,
+            "category": "Electrical",
+            "description": "Test complaint for feedback.",
+        },
+    )
+
+    with complaint_app.app.app_context():
+        db = complaint_app.get_db()
+
+        user = db.execute(
+            "SELECT id FROM users WHERE email = ?",
+            (email.lower(),),
+        ).fetchone()
+
+        complaint = db.execute(
+            """
+            SELECT id FROM complaints
+            WHERE user_id = ? AND title = ?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (user["id"], title),
+        ).fetchone()
+
+        db.execute(
+            "UPDATE complaints SET status = ? WHERE id = ?",
+            (status, complaint["id"]),
+        )
+        db.commit()
+
+        return complaint["id"]
+def test_user_can_open_feedback_form_for_resolved_complaint(client):
+    email = "feedbackform@example.com"
+    register_and_login(client, email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, email, "Resolved feedback form complaint"
+    )
+
+    response = client.get(f"/feedback/{complaint_id}")
+
+    assert response.status_code == 200
+    assert b"Submit Feedback" in response.data
+
+
+def test_user_can_submit_feedback(client):
+    email = "feedbacksubmit@example.com"
+    register_and_login(client, email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, email, "Feedback submission complaint"
+    )
+
+    response = client.post(
+        f"/feedback/{complaint_id}",
+        data={"rating": "5", "comments": "Excellent service"},
+    )
+
+    assert response.status_code == 302
+    assert "/feedback/history" in response.location
+
+    with complaint_app.app.app_context():
+        feedback = complaint_app.get_db().execute(
+            """
+            SELECT rating, comments FROM feedback
+            WHERE complaint_id = ?
+            """,
+            (complaint_id,),
+        ).fetchone()
+
+    assert feedback["rating"] == 5
+    assert feedback["comments"] == "Excellent service"
+
+
+def test_feedback_rejects_invalid_ratings(client):
+    email = "invalidrating@example.com"
+    register_and_login(client, email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, email, "Invalid rating complaint"
+    )
+
+    for rating in ["0", "6", "abc", ""]:
+        response = client.post(
+            f"/feedback/{complaint_id}",
+            data={"rating": rating, "comments": ""},
+        )
+
+        assert response.status_code == 200
+        assert b"Please select a rating from 1 to 5." in response.data
+
+    with complaint_app.app.app_context():
+        count = complaint_app.get_db().execute(
+            "SELECT COUNT(*) FROM feedback WHERE complaint_id = ?",
+            (complaint_id,),
+        ).fetchone()[0]
+
+    assert count == 0
+
+
+def test_feedback_rejects_unresolved_complaint(client):
+    email = "unresolved@example.com"
+    register_and_login(client, email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, email, "Unresolved complaint", status="Submitted"
+    )
+
+    response = client.post(
+        f"/feedback/{complaint_id}",
+        data={"rating": "4", "comments": "Test"},
+    )
+
+    assert response.status_code == 302
+    assert "/complaint-history" in response.location
+
+    with complaint_app.app.app_context():
+        count = complaint_app.get_db().execute(
+            "SELECT COUNT(*) FROM feedback WHERE complaint_id = ?",
+            (complaint_id,),
+        ).fetchone()[0]
+
+    assert count == 0
+
+
+def test_user_cannot_submit_feedback_for_another_users_complaint(client):
+    first_email = "ownerfeedback@example.com"
+    register_and_login(client, first_email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, first_email, "Another user's complaint"
+    )
+
+    client.get("/logout")
+    register_and_login(client, "otherfeedback@example.com")
+
+    response = client.post(
+        f"/feedback/{complaint_id}",
+        data={"rating": "5", "comments": "Unauthorized"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_user_cannot_submit_duplicate_feedback(client):
+    email = "duplicatefeedback@example.com"
+    register_and_login(client, email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, email, "Duplicate feedback complaint"
+    )
+
+    data = {"rating": "4", "comments": "Good service"}
+
+    first_response = client.post(f"/feedback/{complaint_id}", data=data)
+    second_response = client.post(f"/feedback/{complaint_id}", data=data)
+
+    assert first_response.status_code == 302
+    assert second_response.status_code == 302
+
+    with complaint_app.app.app_context():
+        count = complaint_app.get_db().execute(
+            """
+            SELECT COUNT(*) FROM feedback
+            WHERE complaint_id = ?
+            """,
+            (complaint_id,),
+        ).fetchone()[0]
+
+    assert count == 1
+
+
+def test_feedback_history_shows_only_current_users_feedback(client):
+    first_email = "privatefeedback@example.com"
+    register_and_login(client, first_email)
+
+    first_id = _create_feedback_test_complaint(
+        client, first_email, "First user's complaint"
+    )
+
+    client.post(
+        f"/feedback/{first_id}",
+        data={"rating": "5", "comments": "Private feedback comment"},
+    )
+
+    client.get("/logout")
+    register_and_login(client, "secondfeedback@example.com")
+
+    response = client.get("/feedback/history")
+
+    assert response.status_code == 200
+    assert b"Private feedback comment" not in response.data
+
+
+def test_feedback_history_requires_login(client):
+    response = client.get("/feedback/history")
+
+    assert response.status_code == 302
+    assert "/login" in response.location
+
+
+def test_complaint_history_feedback_button_matches_status(client):
+    email = "feedbackbutton@example.com"
+    register_and_login(client, email)
+
+    _create_feedback_test_complaint(
+        client, email, "Resolved button complaint", status="Resolved"
+    )
+    _create_feedback_test_complaint(
+        client, email, "Submitted button complaint", status="Submitted"
+    )
+
+    resolved_response = client.get(
+        "/complaint-history?status=Resolved"
+    )
+    submitted_response = client.get(
+        "/complaint-history?status=Submitted"
+    )
+
+    assert b"Give Feedback" in resolved_response.data
+    assert b"Submitted button complaint" in submitted_response.data
+    assert b"Give Feedback" not in submitted_response.data
+
+
+def test_complaint_history_shows_feedback_submitted(client):
+    email = "feedbacksubmitted@example.com"
+    register_and_login(client, email)
+
+    complaint_id = _create_feedback_test_complaint(
+        client, email, "Already rated complaint"
+    )
+
+    client.post(
+        f"/feedback/{complaint_id}",
+        data={"rating": "5", "comments": "Thank you"},
+    )
+
+    response = client.get("/complaint-history?status=Resolved")
+
+    assert response.status_code == 200
+    assert b"Feedback Submitted" in response.data
+    assert b"Give Feedback" not in response.data
