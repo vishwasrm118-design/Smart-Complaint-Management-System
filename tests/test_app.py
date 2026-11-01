@@ -906,3 +906,154 @@ def test_complaint_history_shows_feedback_submitted(client):
     assert response.status_code == 200
     assert b"Feedback Submitted" in response.data
     assert b"Give Feedback" not in response.data
+
+
+# User notification feature tests
+
+def create_owner_complaint_and_admin(client):
+    complaint_app.app.config["ADMIN_EMAILS"] = "admin@example.com"
+    register_and_login(client, "notification-owner@example.com")
+    response = lodge_test_complaint(client, "Notification test complaint")
+    complaint_id = int(response.headers["Location"].rstrip("/").split("/")[-1])
+    client.get("/logout")
+    register_and_login(client, "admin@example.com")
+    return complaint_id
+
+
+def test_notification_is_created_when_complaint_status_changes(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    response = client.post(
+        f"/admin/complaints/{complaint_id}/status",
+        data={"status": "In Progress"},
+    )
+    assert response.status_code == 302
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT * FROM notifications WHERE complaint_id = ?", (complaint_id,)
+        ).fetchone()
+    assert row is not None
+    assert row["message"] == f"Your complaint #{complaint_id} is now In Progress."
+    assert row["is_read"] == 0
+
+
+def test_correct_complaint_owner_receives_notification(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    with complaint_app.app.app_context():
+        owner = complaint_app.get_db().execute(
+            "SELECT id FROM users WHERE email = ?", ("notification-owner@example.com",)
+        ).fetchone()
+        notification = complaint_app.get_db().execute(
+            "SELECT user_id FROM notifications WHERE complaint_id = ?", (complaint_id,)
+        ).fetchone()
+    assert notification["user_id"] == owner["id"]
+
+
+def test_notification_is_not_sent_to_unrelated_users_or_admin(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    create_account(client, "unrelated@example.com")
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    with complaint_app.app.app_context():
+        db = complaint_app.get_db()
+        unrelated = db.execute("SELECT id FROM users WHERE email = ?", ("unrelated@example.com",)).fetchone()["id"]
+        admin = db.execute("SELECT id FROM users WHERE email = ?", ("admin@example.com",)).fetchone()["id"]
+        recipients = [r["user_id"] for r in db.execute("SELECT user_id FROM notifications").fetchall()]
+    assert unrelated not in recipients
+    assert admin not in recipients
+
+
+def test_user_can_view_only_their_notifications(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    client.get("/logout")
+    login_as(client, "notification-owner@example.com")
+    response = client.get("/notifications")
+    assert response.status_code == 200
+    assert b"My Notifications" in response.data
+    assert b"Notification test complaint" not in response.data  # message is status-based
+    assert f"#{complaint_id}".encode() in response.data
+
+
+def test_user_cannot_view_another_users_notifications(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    client.get("/logout")
+    register_and_login(client, "intruder@example.com")
+    response = client.get("/notifications")
+    assert response.status_code == 200
+    assert f"#{complaint_id}".encode() not in response.data
+    assert b"You have no notifications yet." in response.data
+
+
+def test_user_can_mark_own_notification_as_read(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    with complaint_app.app.app_context():
+        notification_id = complaint_app.get_db().execute(
+            "SELECT id FROM notifications WHERE complaint_id = ?", (complaint_id,)
+        ).fetchone()["id"]
+    client.get("/logout")
+    login_as(client, "notification-owner@example.com")
+    response = client.post(f"/notifications/{notification_id}/read")
+    assert response.status_code == 302
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT is_read FROM notifications WHERE id = ?", (notification_id,)
+        ).fetchone()
+    assert row["is_read"] == 1
+
+
+def test_user_cannot_mark_another_users_notification_as_read(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    with complaint_app.app.app_context():
+        notification_id = complaint_app.get_db().execute(
+            "SELECT id FROM notifications WHERE complaint_id = ?", (complaint_id,)
+        ).fetchone()["id"]
+    client.get("/logout")
+    register_and_login(client, "intruder@example.com")
+    response = client.post(f"/notifications/{notification_id}/read")
+    assert response.status_code == 404
+    with complaint_app.app.app_context():
+        row = complaint_app.get_db().execute(
+            "SELECT is_read FROM notifications WHERE id = ?", (notification_id,)
+        ).fetchone()
+    assert row["is_read"] == 0
+
+
+def test_mark_all_notifications_as_read(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    client.get("/logout")
+    login_as(client, "notification-owner@example.com")
+    response = client.post("/notifications/mark-all-read")
+    assert response.status_code == 302
+    with complaint_app.app.app_context():
+        unread = complaint_app.get_db().execute(
+            "SELECT COUNT(*) FROM notifications WHERE is_read = 0"
+        ).fetchone()[0]
+    assert unread == 0
+
+
+def test_notification_routes_require_login(client):
+    assert client.get("/notifications").status_code == 302
+    assert client.post("/notifications/1/read").status_code == 302
+    assert client.post("/notifications/mark-all-read").status_code == 302
+
+
+def test_empty_notification_list_is_handled(client):
+    register_and_login(client, "empty-notifications@example.com")
+    response = client.get("/notifications")
+    assert response.status_code == 200
+    assert b"You have no notifications yet." in response.data
+
+
+def test_same_status_submission_does_not_create_duplicate_notification(client):
+    complaint_id = create_owner_complaint_and_admin(client)
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    client.post(f"/admin/complaints/{complaint_id}/status", data={"status": "In Progress"})
+    with complaint_app.app.app_context():
+        count = complaint_app.get_db().execute(
+            "SELECT COUNT(*) FROM notifications WHERE complaint_id = ?", (complaint_id,)
+        ).fetchone()[0]
+    assert count == 1
