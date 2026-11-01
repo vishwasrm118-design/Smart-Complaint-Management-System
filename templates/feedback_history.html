@@ -1,0 +1,35 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>My Feedback History</h2>
+
+    {% if feedback_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Complaint ID</th>
+                    <th>Rating</th>
+                    <th>Comments</th>
+                    <th>Date Submitted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in feedback_items %}
+                    <tr>
+                        <td>{{ item.complaint_id }}</td>
+                        <td>{{ item.rating }} / 5</td>
+                        <td>{{ item.comments or "No comments" }}</td>
+                        <td>{{ item.created_at }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have not submitted any feedback yet.</p>
+    {% endif %}
+
+    <a href="{{ url_for('complaint_history') }}">Back to Complaint History</a>
+</div>
+{% endblock %}

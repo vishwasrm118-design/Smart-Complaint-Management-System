@@ -74,6 +74,18 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+        CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    complaint_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comments TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (complaint_id) REFERENCES complaints(id),
+    UNIQUE (user_id, complaint_id)
+);
+
 
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -229,11 +241,17 @@ def complaint_history():
         selected_category = ""
 
     sql = """
-        SELECT id, title, category, description, status,
-               created_at, resolution_remarks
-        FROM complaints
-        WHERE user_id = ?
-    """
+    SELECT id, title, category, description, status,
+           created_at, resolution_remarks,
+           EXISTS (
+               SELECT 1
+               FROM feedback
+               WHERE feedback.complaint_id = complaints.id
+                 AND feedback.user_id = complaints.user_id
+           ) AS feedback_submitted
+    FROM complaints
+    WHERE user_id = ?
+"""
     params = [session["user_id"]]
 
     if search_query:
@@ -645,6 +663,102 @@ def update_complaint_status(complaint_id):
 
     flash(f"Complaint #{complaint_id} status updated to {new_status}.")
     return redirect(url_for("admin_complaints"))
+
+
+@app.route("/feedback/<int:complaint_id>", methods=["GET", "POST"])
+@login_required
+def submit_feedback(complaint_id):
+    db = get_db()
+
+    # Make sure this complaint belongs to the logged-in user.
+    complaint = db.execute(
+    """
+    SELECT id, title, status
+    FROM complaints
+    WHERE id = ? AND user_id = ?
+    """,
+    (complaint_id, session["user_id"]),
+).fetchone()
+
+    if complaint is None:
+        abort(404)
+
+    # Feedback is allowed only after a complaint is resolved.
+    if complaint["status"] != "Resolved":
+        flash("Feedback can only be submitted for resolved complaints.", "error")
+        return redirect(url_for("complaint_history"))
+
+    # Prevent a second feedback submission for the same complaint.
+    existing_feedback = db.execute(
+        """
+        SELECT id FROM feedback
+        WHERE user_id = ? AND complaint_id = ?
+        """,
+        (session["user_id"], complaint_id),
+    ).fetchone()
+
+    if existing_feedback:
+        flash("You have already submitted feedback for this complaint.", "error")
+        return redirect(url_for("complaint_history"))
+
+    if request.method == "POST":
+        rating_value = request.form.get("rating", "").strip()
+        comments = request.form.get("comments", "").strip()
+
+        # Validate the rating on the server.
+        try:
+            rating = int(rating_value)
+        except (TypeError, ValueError):
+            rating = 0
+
+        if rating < 1 or rating > 5:
+            flash("Please select a rating from 1 to 5.", "error")
+            return render_template("feedback.html", complaint=complaint)
+
+        try:
+            db.execute(
+                """
+                INSERT INTO feedback (user_id, complaint_id, rating, comments)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    session["user_id"],
+                    complaint_id,
+                    rating,
+                    comments or None,
+                ),
+            )
+            db.commit()
+        except sqlite3.IntegrityError:
+            db.rollback()
+            flash("Feedback has already been submitted for this complaint.", "error")
+            return redirect(url_for("complaint_history"))
+
+        flash("Feedback submitted successfully!", "success")
+        return redirect(url_for("feedback_history"))
+
+    return render_template("feedback.html", complaint=complaint)
+
+
+@app.route("/feedback/history")
+@login_required
+def feedback_history():
+    db = get_db()
+
+    feedback_items = db.execute(
+        """
+        SELECT complaint_id, rating, comments, created_at
+        FROM feedback
+        WHERE user_id = ?
+        ORDER BY created_at DESC, id DESC
+        """,
+        (session["user_id"],),
+    ).fetchall()
+
+    return render_template(
+        "feedback_history.html",
+        feedback_items=feedback_items,
+    )
 
 
 if __name__ == "__main__":

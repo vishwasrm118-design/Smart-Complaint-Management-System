@@ -113,13 +113,27 @@
                         {{ complaint.resolution_remarks or 'Not available' }}
                     </td>
 
-                    <td>
-                        <a class="btn btn-small"
-                           href="{{ url_for('track_complaint',
-                                           complaint_id=complaint.id) }}">
-                            Track →
-                        </a>
-                    </td>
+                    
+<td>
+    <a class="btn btn-small"
+       href="{{ url_for('track_complaint',
+                        complaint_id=complaint.id) }}">
+        Track →
+    </a>
+
+    {% if complaint.status == 'Resolved' %}
+        {% if complaint.feedback_submitted %}
+            <p>Feedback Submitted</p>
+        {% else %}
+            <a class="btn btn-small"
+               href="{{ url_for('submit_feedback',
+                                complaint_id=complaint.id) }}">
+                Give Feedback
+            </a>
+        {% endif %}
+    {% endif %}
+</td>
+
                 </tr>
                 {% endfor %}
             </tbody>
