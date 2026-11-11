@@ -1,17 +1,59 @@
 ﻿/* ==================================================
    SMART COMPLAINT MANAGEMENT SYSTEM
-   Complete Professional Stylesheet
-   Login, Dashboard and Lodge Complaint
+   Consolidated stylesheet
+   1. Tokens  2. Base  3. Layout  4. Components
+   5. Login   6. Dashboard  7. Complaint form
+   8. Register/Track  9. Admin  10. Responsive
    ================================================== */
 
-/* ---------- Global Styles ---------- */
+/* ---------- 1. Design tokens ---------- */
 
-* {
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-soft: #eff6ff;
+    --primary-border: #bfdbfe;
+
+    --text: #172033;
+    --text-strong: #0f172a;
+    --text-muted: #64748b;
+    --text-body: #475569;
+
+    --bg: #f3f6fc;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --border: #e2e8f0;
+    --border-input: #cbd5e1;
+
+    --success-bg: #dcfce7;  --success-text: #166534;
+    --warning-bg: #fef3c7;  --warning-text: #92400e;
+    --info-bg: #dbeafe;     --info-text: #1d4ed8;
+    --danger-bg: #fee2e2;   --danger-text: #991b1b;
+    --danger: #dc2626;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+
+    --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.07);
+    --shadow-lg: 0 18px 55px rgba(15, 23, 42, 0.09);
+
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --ease: 0.18s ease;
+}
+
+/* ---------- 2. Base ---------- */
+
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
 html {
     min-height: 100%;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -19,24 +61,57 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #f3f6fc;
-    color: #172033;
-    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
     font-size: 15px;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3 {
+    color: var(--text);
+    line-height: 1.3;
+}
+
+p, td, th, label, a, button, small {
+    overflow-wrap: anywhere;
+}
+
+a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color var(--ease);
+}
+
+a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
+}
+
+img, svg {
+    max-width: 100%;
+}
+
+/* ---------- 3. Page layout ---------- */
 
 header {
     width: 100%;
-    min-height: 80px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
-    padding: 18px 5%;
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 3px 15px rgba(15, 23, 42, 0.04);
+    gap: 12px 20px;
+    padding: 16px 5%;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
 
 header h1 {
@@ -49,28 +124,68 @@ header h1 {
 
 header p {
     margin: 0;
-    padding: 9px 16px;
+    padding: 8px 16px;
     border-radius: 30px;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
     font-weight: 600;
+}
+
+header nav {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 20px;
+    min-width: 0;
+}
+
+header nav a {
+    position: relative;
+    padding: 4px 0;
+    color: var(--text-body);
+}
+
+header nav a:hover {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+header nav a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--ease);
+}
+
+header nav a:hover::after,
+header nav a[aria-current="page"]::after,
+header nav a.active::after {
+    transform: scaleX(1);
 }
 
 main {
     width: 100%;
     max-width: 1200px;
     flex: 1;
+    min-width: 0;
     margin: 0 auto;
-    padding: 42px 28px;
+    padding: 40px 28px;
 }
 
 footer {
     width: 100%;
     margin-top: auto;
     padding: 24px 20px;
-    background: #ffffff;
-    border-top: 1px solid #e2e8f0;
-    color: #64748b;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
     text-align: center;
 }
 
@@ -78,76 +193,216 @@ footer p {
     margin: 3px 0;
 }
 
-a {
-    color: #2563eb;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-a:hover {
-    color: #1d4ed8;
-    text-decoration: underline;
-}
-
-h2,
-h3 {
-    color: #172033;
-    line-height: 1.3;
-}
-
-/* ---------- Flash Messages ---------- */
-
+/* Flash messages */
 main > ul {
     margin: 0 0 22px;
     padding: 14px 20px 14px 38px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid var(--primary-border);
     border-radius: 10px;
-    background: #eff6ff;
+    background: var(--primary-soft);
     color: #1e40af;
 }
 
-/* ---------- Shared Buttons ---------- */
+.message {
+    overflow-wrap: anywhere;
+}
 
+/* ---------- 4. Shared components ---------- */
+
+/* Buttons: neutral by default, primary for submit */
+button,
+input[type="submit"],
+input[type="button"],
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 11px 18px;
-    border: 1px solid #dbe3ef;
-    border-radius: 9px;
-    background: #ffffff;
+    min-height: 42px;
+    padding: 9px 18px;
+    border: 1px solid var(--border-input);
+    border-radius: 10px;
+    background: var(--surface);
     color: #334155;
+    font: inherit;
     font-weight: 700;
+    line-height: 1.2;
     text-decoration: none;
-    transition: 0.2s ease;
+    cursor: pointer;
+    transition: background-color var(--ease), border-color var(--ease),
+                color var(--ease), transform var(--ease), box-shadow var(--ease);
 }
 
+button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
 .btn:hover {
-    border-color: #2563eb;
-    color: #1d4ed8;
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-dark);
     text-decoration: none;
 }
 
-.btn-primary {
-    border-color: #2563eb;
-    background: #2563eb;
-    color: #ffffff;
+button:active,
+.btn:active {
+    transform: translateY(1px);
 }
 
-.btn-primary:hover {
-    background: #1d4ed8;
-    color: #ffffff;
+button[type="submit"],
+input[type="submit"],
+.btn-primary,
+.complaint-submit,
+.login-submit {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
+
+button[type="submit"]:hover,
+input[type="submit"]:hover,
+.btn-primary:hover,
+.complaint-submit:hover,
+.login-submit:hover {
+    border-color: var(--primary-dark);
+    background: var(--primary-dark);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
 }
 
 .btn-small {
-    padding: 7px 12px;
+    min-height: 34px;
+    padding: 6px 12px;
     font-size: 0.85rem;
 }
 
-/* ==================================================
-   LOGIN PAGE
-   ================================================== */
+button:disabled,
+.btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Form controls */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+select,
+textarea {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 46px;
+    padding: 11px 14px;
+    border: 1px solid var(--border-input);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.94rem;
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #94a3b8;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+    border-color: #94a3b8;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+select {
+    cursor: pointer;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    max-width: 100%;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 750;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.status-pending  { background: var(--warning-bg); color: var(--warning-text); }
+.status-progress { background: var(--info-bg);    color: var(--info-text); }
+.status-resolved { background: var(--success-bg); color: var(--success-text); }
+.status-rejected { background: var(--danger-bg);  color: var(--danger-text); }
+
+/* Tables */
+.table-wrapper,
+.table-responsive {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper table,
+.table-responsive table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.complaints-table {
+    text-align: left;
+}
+
+.complaints-table th,
+.table-wrapper th,
+.table-responsive th {
+    padding: 14px 20px;
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.complaints-table td,
+.table-wrapper td,
+.table-responsive td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eef2f7;
+    color: var(--text-body);
+    vertical-align: top;
+}
+
+.complaints-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.complaints-table tbody tr {
+    transition: background-color var(--ease);
+}
+
+.complaints-table tbody tr:hover {
+    background: var(--surface-alt);
+}
+
+/* ---------- 5. Login ---------- */
 
 .login-page {
     width: 100%;
@@ -162,10 +417,10 @@ main > ul {
     width: 100%;
     max-width: 470px;
     padding: 38px 40px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 20px;
-    background: #ffffff;
-    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.09);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
 }
 
 .login-brand-icon {
@@ -176,25 +431,27 @@ main > ul {
     justify-content: center;
     margin-bottom: 24px;
     border-radius: 15px;
-    background: #2563eb;
-    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, var(--primary-dark));
+    color: #fff;
     font-size: 1.15rem;
     font-weight: 800;
     letter-spacing: 1px;
-    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25);
 }
 
-.login-eyebrow {
+.login-eyebrow,
+.dashboard-eyebrow,
+.complaint-page-eyebrow {
     margin: 0 0 8px;
-    color: #2563eb;
+    color: var(--primary);
     font-size: 0.76rem;
     font-weight: 800;
-    letter-spacing: 2px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
 }
 
 .login-card h2 {
     margin: 0 0 10px;
-    color: #172033;
     font-size: 1.8rem;
     font-weight: 750;
     letter-spacing: -0.5px;
@@ -202,7 +459,7 @@ main > ul {
 
 .login-description {
     margin: 0 0 26px;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.94rem;
     line-height: 1.7;
 }
@@ -212,7 +469,6 @@ main > ul {
     margin: 0;
     padding: 0;
     border: 0;
-    border-radius: 0;
     background: transparent;
     box-shadow: none;
 }
@@ -229,104 +485,58 @@ main > ul {
     font-weight: 700;
 }
 
-.login-card .login-field input {
-    width: 100%;
-    min-height: 49px;
-    padding: 13px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #172033;
-    font: inherit;
-    font-size: 0.92rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.login-card .login-field input::placeholder {
-    color: #94a3b8;
-}
-
-.login-card .login-field input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-}
-
 .login-card .login-submit {
     width: 100%;
     min-height: 49px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
     margin-top: 25px;
-    padding: 13px 18px;
-    border: none;
-    border-radius: 10px;
-    background: #2563eb;
-    color: #ffffff;
-    font-family: inherit;
     font-size: 0.98rem;
     font-weight: 750;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
 }
 
 .login-card .login-submit:hover {
-    background: #1d4ed8;
     transform: translateY(-1px);
 }
 
 .login-register {
     margin-top: 25px;
     padding-top: 21px;
-    border-top: 1px solid #e2e8f0;
-    color: #64748b;
-    text-align: center;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
     font-size: 0.9rem;
+    text-align: center;
 }
 
 .login-register a {
-    color: #2563eb;
     font-weight: 750;
 }
 
 .login-security {
     margin-top: 23px;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.78rem;
-    text-align: center;
     line-height: 1.7;
+    text-align: center;
 }
 
-/* ==================================================
-   DASHBOARD PAGE
-   ================================================== */
+/* ---------- 6. Dashboard ---------- */
 
 .dashboard-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     gap: 20px;
     margin-bottom: 28px;
-}
-
-.dashboard-eyebrow {
-    margin-bottom: 8px;
-    color: #2563eb;
-    font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 1.8px;
 }
 
 .dashboard-header h2 {
     margin: 0;
     font-size: 2rem;
+    letter-spacing: -0.5px;
 }
 
 .dashboard-subtitle {
     margin: 8px 0 0;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .stats-grid {
@@ -339,16 +549,17 @@ main > ul {
 .stat-card {
     min-width: 0;
     padding: 23px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 14px;
-    background: #ffffff;
-    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
 }
 
 .stat-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    border-color: var(--primary-border);
+    box-shadow: var(--shadow-md);
 }
 
 .stat-icon {
@@ -358,22 +569,24 @@ main > ul {
 
 .stat-card p {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 .stat-card h3 {
-    margin: 7px 0 0;
-    color: #0f172a;
+    margin: 6px 0 0;
+    color: var(--text-strong);
     font-size: 2rem;
+    font-variant-numeric: tabular-nums;
 }
 
 .complaints-panel {
     margin-bottom: 24px;
     overflow: hidden;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 14px;
-    background: #ffffff;
-    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .panel-heading {
@@ -381,8 +594,8 @@ main > ul {
     align-items: center;
     justify-content: space-between;
     gap: 15px;
-    padding: 23px 25px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 22px 25px;
+    border-bottom: 1px solid var(--border);
 }
 
 .panel-heading h3 {
@@ -391,51 +604,23 @@ main > ul {
 
 .panel-heading p {
     margin: 5px 0 0;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .complaint-count {
-    padding: 6px 11px;
+    padding: 6px 12px;
     border-radius: 20px;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
     font-size: 0.82rem;
     font-weight: 700;
-}
-
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.complaints-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
-
-.complaints-table th {
-    padding: 15px 20px;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.complaints-table td {
-    padding: 17px 20px;
-    border-bottom: 1px solid #eef2f7;
-    color: #475569;
-}
-
-.complaints-table tbody tr:hover {
-    background: #f8fafc;
+    white-space: nowrap;
 }
 
 .complaint-id {
-    color: #2563eb;
+    color: var(--primary);
     font-weight: 800;
+    white-space: nowrap;
 }
 
 .complaint-title {
@@ -443,36 +628,8 @@ main > ul {
     font-weight: 650;
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 750;
-}
-
-.status-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-progress {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.status-resolved {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
 .empty-state {
-    padding: 45px 25px;
+    padding: 48px 25px;
     text-align: center;
 }
 
@@ -481,7 +638,7 @@ main > ul {
 }
 
 .empty-state p {
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .dashboard-footer {
@@ -489,21 +646,20 @@ main > ul {
     justify-content: space-between;
     gap: 15px;
     padding: 8px 0;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.88rem;
 }
 
 .dashboard-footer a {
-    color: #dc2626;
+    color: var(--danger);
 }
 
-/* ==================================================
-   LODGE A COMPLAINT PAGE
-   ================================================== */
+/* ---------- 7. Lodge a complaint ---------- */
 
 .complaint-page {
     width: 100%;
     max-width: 850px;
+    min-width: 0;
     margin: 0 auto;
 }
 
@@ -511,18 +667,8 @@ main > ul {
     margin-bottom: 25px;
 }
 
-.complaint-page-eyebrow {
-    margin: 0 0 8px;
-    color: #2563eb;
-    font-size: 0.76rem;
-    font-weight: 800;
-    letter-spacing: 1.7px;
-    text-transform: uppercase;
-}
-
 .complaint-page-header h2 {
     margin: 0 0 10px;
-    color: #172033;
     font-size: 2rem;
     font-weight: 800;
     letter-spacing: -0.5px;
@@ -530,29 +676,28 @@ main > ul {
 
 .complaint-page-description {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.98rem;
     line-height: 1.7;
 }
 
 .complaint-form-card {
     padding: 32px;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
     box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
 }
 
 .complaint-form-heading {
     margin: 0 0 7px;
-    color: #172033;
     font-size: 1.2rem;
     font-weight: 750;
 }
 
 .complaint-form-note {
     margin: 0 0 25px;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.9rem;
 }
 
@@ -562,7 +707,6 @@ main > ul {
     margin: 0;
     padding: 0;
     border: 0;
-    border-radius: 0;
     background: transparent;
     box-shadow: none;
 }
@@ -579,49 +723,14 @@ main > ul {
     font-weight: 700;
 }
 
-.complaint-field input,
-.complaint-field select,
-.complaint-field textarea {
-    display: block;
-    width: 100%;
-    min-height: 48px;
-    padding: 12px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    outline: none;
-    background: #ffffff;
-    color: #172033;
-    font-family: inherit;
-    font-size: 0.94rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.complaint-field input::placeholder,
-.complaint-field textarea::placeholder {
-    color: #94a3b8;
-}
-
-.complaint-field select {
-    cursor: pointer;
-}
-
 .complaint-field textarea {
     min-height: 160px;
-    resize: vertical;
-    line-height: 1.6;
-}
-
-.complaint-field input:focus,
-.complaint-field select:focus,
-.complaint-field textarea:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11);
 }
 
 .complaint-field small {
     display: block;
     margin-top: 6px;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.82rem;
 }
 
@@ -634,25 +743,13 @@ main > ul {
 
 .complaint-submit {
     min-height: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    padding: 12px 22px;
-    border: 1px solid #2563eb;
-    border-radius: 10px;
-    background: #2563eb;
-    color: #ffffff;
-    font-family: inherit;
+    padding: 12px 24px;
     font-size: 0.95rem;
     font-weight: 750;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
 }
 
 .complaint-submit:hover {
     transform: translateY(-1px);
-    background: #1d4ed8;
 }
 
 .complaint-back-link {
@@ -660,18 +757,16 @@ main > ul {
     align-items: center;
     gap: 7px;
     margin-top: 22px;
-    color: #475569;
+    color: var(--text-body);
     font-size: 0.9rem;
     font-weight: 650;
 }
 
 .complaint-back-link:hover {
-    color: #2563eb;
+    color: var(--primary);
 }
 
-/* ==================================================
-   REGISTER AND TRACK COMPLAINT PAGES
-   ================================================== */
+/* ---------- 8. Register and track ---------- */
 
 .register-card,
 .track-card {
@@ -679,10 +774,10 @@ main > ul {
     max-width: 650px;
     margin: 0 auto;
     padding: 32px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 16px;
-    background: #ffffff;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
 }
 
 .register-card h2,
@@ -692,48 +787,92 @@ main > ul {
 
 .register-card label,
 .track-card label {
+    display: block;
     color: #334155;
     font-weight: 700;
 }
 
 .register-card input {
-    width: 100%;
-    min-height: 46px;
     margin: 7px 0 18px;
-    padding: 11px 13px;
-    border: 1px solid #cbd5e1;
-    border-radius: 9px;
-    font: inherit;
 }
 
-.register-card input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+/* ---------- 9. Admin ---------- */
+
+.admin-page {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
 }
 
-/* ==================================================
-   RESPONSIVE DESIGN
-   ================================================== */
+.admin-page table {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+}
 
-@media (max-width: 700px) {
+.admin-page td p {
+    margin: 6px 0 0;
+}
+
+.admin-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+}
+
+.admin-filters input  { flex: 2 1 260px; width: auto; }
+.admin-filters select { flex: 1 1 150px; width: auto; }
+.admin-filters button { flex: 0 0 auto; }
+
+.admin-page form:not(.admin-filters) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 190px;
+}
+
+.admin-page form:not(.admin-filters) select,
+.admin-page form:not(.admin-filters) textarea {
+    flex: 1 1 130px;
+    width: auto;
+    min-height: 38px;
+}
+
+.admin-page form:not(.admin-filters) textarea {
+    min-width: 150px;
+    min-height: 60px;
+}
+
+/* ---------- 10. Responsive ---------- */
+
+@media (max-width: 760px) {
     header {
-        align-items: flex-start;
-        flex-direction: column;
-        padding: 18px 22px;
+        padding: 16px 5%;
     }
 
     header h1 {
         font-size: 1.2rem;
     }
 
+    header nav {
+        gap: 6px 14px;
+    }
+
     main {
-        padding: 28px 18px;
+        padding: 26px 16px;
     }
 
     .dashboard-header {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .dashboard-header h2,
+    .complaint-page-header h2 {
+        font-size: 1.65rem;
     }
 
     .stats-grid {
@@ -757,10 +896,6 @@ main > ul {
         padding: 23px 19px;
     }
 
-    .complaint-page-header h2 {
-        font-size: 1.65rem;
-    }
-
     .complaint-form-actions {
         align-items: stretch;
         flex-direction: column;
@@ -768,6 +903,27 @@ main > ul {
 
     .complaint-submit {
         width: 100%;
+    }
+
+    .admin-filters {
+        align-items: stretch;
+    }
+
+    .admin-filters input,
+    .admin-filters select,
+    .admin-filters button {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .admin-page table {
+        min-width: 850px;
+    }
+}
+
+@media (min-width: 761px) and (max-width: 1000px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -792,138 +948,32 @@ main > ul {
     }
 }
 
-/* ---------- Consistent layout and controls ---------- */
-* { box-sizing: border-box; }
-html, body { max-width: 100%; overflow-x: hidden; }
-body { font-family: Arial, Helvetica, sans-serif; }
-header {
-    flex-wrap: wrap;
-    align-items: center;
-    row-gap: 12px;
-}
-header h1 { flex: 0 1 auto; min-width: 220px; }
-header p { margin: 0; }
-header nav {
-    display: flex;
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 18px;
-    min-width: 0;
-}
-header nav a {
-    display: inline-block;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    white-space: normal;
-    padding: 4px 0;
-}
-main, section, article, .admin-page, .complaint-page { min-width: 0; }
-p, td, th, label, a, button, small { overflow-wrap: anywhere; }
-button, input, select, textarea {
-    font: inherit;
-    max-width: 100%;
-}
-button, input[type="submit"], input[type="button"], .btn,
-.complaint-submit, .login-submit {
-    min-height: 40px;
-    padding: 9px 15px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #fff;
-    color: #334155;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color .15s ease, border-color .15s ease;
-}
-button:hover, input[type="submit"]:hover, input[type="button"]:hover, .btn:hover {
-    border-color: #2563eb;
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-button[type="submit"], input[type="submit"], .btn-primary,
-.complaint-submit, .login-submit {
-    border-color: #2563eb;
-    background: #2563eb;
-    color: #fff;
-}
-button[type="submit"]:hover, input[type="submit"]:hover,
-.btn-primary:hover, .complaint-submit:hover, .login-submit:hover {
-    background: #1d4ed8;
-    color: #fff;
-}
-input:not([type="checkbox"]):not([type="radio"]),
-select, textarea {
-    width: 100%;
-    min-height: 42px;
-    padding: 10px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #fff;
-    color: #172033;
-}
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-}
-textarea { min-height: 110px; resize: vertical; }
-.admin-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin: 18px 0;
-}
-.admin-filters input { flex: 2 1 260px; width: auto; }
-.admin-filters select { flex: 1 1 150px; width: auto; }
-.admin-filters button { flex: 0 0 auto; }
-.table-responsive, .table-wrapper {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-.table-responsive table, .table-wrapper table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.table-responsive th, .table-responsive td,
-.table-wrapper th, .table-wrapper td {
-    padding: 12px 14px;
-    vertical-align: top;
-    overflow-wrap: anywhere;
-}
-.table-responsive th, .table-wrapper th {
-    background: #f8fafc;
-    color: #475569;
-    font-size: .85rem;
-    text-align: left;
-}
-.admin-page { width: 100%; }
-.admin-page table { min-width: 920px; }
-.admin-page td p { margin: 6px 0 0; }
-.admin-page form:not(.admin-filters) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    min-width: 190px;
-}
-.admin-page form:not(.admin-filters) select,
-.admin-page form:not(.admin-filters) textarea { width: auto; flex: 1 1 130px; }
-.admin-page form:not(.admin-filters) textarea { min-width: 150px; }
-.status-badge { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
-.message { overflow-wrap: anywhere; }
-
-@media (max-width: 760px) {
-    header { padding: 16px 5%; }
-    header h1 { min-width: 0; font-size: 1.2rem; }
-    header nav { gap: 6px 14px; }
-    main { padding: 26px 16px; }
-    .admin-filters { align-items: stretch; }
-    .admin-filters input, .admin-filters select, .admin-filters button { flex: 1 1 100%; width: 100%; }
-    .admin-page table { min-width: 850px; }
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+        animation: none !important;
+    }
 }
 
+/* Print: drop chrome, keep content */
+@media print {
+    header nav,
+    footer,
+    .btn,
+    button {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .stat-card,
+    .complaints-panel,
+    .complaint-form-card {
+        box-shadow: none;
+    }
+}
