@@ -1,0 +1,132 @@
+
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<section class="admin-dashboard">
+    <h2>Admin Dashboard</h2>
+    <p>Overview of complaints and registered users.</p>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Complaints</h3>
+            <p class="stat-number">{{ total_complaints }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Total Users</h3>
+            <p class="stat-number">{{ total_users }}</p>
+        </div>
+
+        {% for status in complaint_statuses %}
+        <div class="stat-card">
+            <h3>{{ status }}</h3>
+            <p class="stat-number">{{ status_counts[status] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <section>
+        <h3>Complaint Status Distribution</h3>
+
+        {% for status in complaint_statuses %}
+            {% set count = status_counts[status] %}
+            {% if total_complaints > 0 %}
+                {% set percentage = (count * 100 / total_complaints)|round(1) %}
+            {% else %}
+                {% set percentage = 0 %}
+            {% endif %}
+
+            <div class="status-row">
+                <span>{{ status }} — {{ count }}</span>
+                <div class="progress-track"
+                     role="progressbar"
+                     aria-label="{{ status }}"
+                     aria-valuenow="{{ percentage }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                    <div class="progress-fill"
+                         style="width: {{ percentage }}%;"></div>
+                </div>
+                <span>{{ percentage }}%</span>
+            </div>
+        {% endfor %}
+    </section>
+
+    <section>
+        <h3>Complaints by Category</h3>
+
+        {% if category_counts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Number of Complaints</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in category_counts %}
+                <tr>
+                    <td>{{ item["category"] }}</td>
+                    <td>{{ item["total"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No complaint categories to display yet.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h3>Latest Complaints</h3>
+
+        {% if recent_complaints %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Submitted By</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for complaint in recent_complaints %}
+                <tr>
+                    <td>{{ complaint["id"] }}</td>
+                    <td>{{ complaint["title"] }}</td>
+                    <td>{{ complaint["category"] }}</td>
+                    <td>{{ complaint["user_name"] }}</td>
+                    <td>{{ complaint["created_at"] }}</td>
+                    <td>{{ complaint["status"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No complaints have been submitted yet.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h3>Quick Actions</h3>
+        <p>
+            <a href="{{ url_for('admin_complaints') }}">
+                Complaint Status Management
+            </a>
+        </p>
+        <p>
+            <a href="{{ url_for('admin_complaints') }}">
+                View All Complaints
+            </a>
+        </p>
+        <p>
+            <a href="{{ url_for('dashboard') }}">User Dashboard</a>
+        </p>
+    </section>
+</section>
+{% endblock %}

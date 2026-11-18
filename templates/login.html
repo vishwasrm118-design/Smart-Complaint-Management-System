@@ -1,0 +1,55 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="login-page">
+    <div class="login-card">
+        <div class="login-brand-icon">SC</div>
+
+        <p class="login-eyebrow">WELCOME BACK</p>
+        <h2>Sign in to your account</h2>
+        <p class="login-description">
+            Manage your complaints and track their progress in one place.
+        </p>
+
+        <form method="POST" action="{{ url_for('login') }}" class="login-form">
+            <div class="login-field">
+                <label for="email">Email address</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                    placeholder="Enter your email address"
+                >
+            </div>
+
+            <div class="login-field">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                >
+            </div>
+
+            <button type="submit" class="login-submit">
+                Log In
+            </button>
+        </form>
+
+        <div class="login-register">
+            Don't have an account?
+            <a href="{{ url_for('register') }}">Create an account</a>
+        </div>
+
+        <div class="login-security">
+            <span aria-hidden="true">🔒</span>
+            Your account and complaint information are protected.
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Complaint Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Smart Complaint Management System</h1>
+
+        {% if session.get('user_id') %}
+            <p>Welcome, {{ session.get('user_name', 'User') }}</p>
+            <nav>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('lodge_complaint') }}">Lodge Complaint</a>
+                <a href="{{ url_for('complaint_history') }}">Complaint History</a>
+                
+<a href="{{ url_for('feedback_history') }}">My Feedback</a>
+                <a href="{{ url_for('notifications') }}">
+                    Notifications
+                    {% if unread_notification_count > 0 %}
+                        <span class="notification-count">{{ unread_notification_count }}</span>
+                    {% endif %}
+                </a>
+
+                {% if current_user_is_admin() %}
+  <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+  <a href="{{ url_for('admin_complaints') }}">Complaint Status Management</a>
+{% endif %}
+
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </nav>
+        {% else %}
+            <nav>
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('register') }}">Register</a>
+            </nav>
+        {% endif %}
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p class="message {{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Smart Complaint Management System</p>
+        <p>Making complaint management simpler and smarter.</p>
+    </footer>
+</body>
+</html>
